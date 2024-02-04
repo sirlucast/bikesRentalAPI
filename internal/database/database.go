@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -12,39 +11,40 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Service interface {
-	Health() map[string]string
+type Database interface {
+	Health() error
 }
 
-type service struct {
+type database struct {
 	db *sql.DB
 }
 
 var (
-	dburl = os.Getenv("DB_URL")
+	dbUrl = os.Getenv("DB_URL")
 )
 
-func New() Service {
-	db, err := sql.Open("sqlite3", dburl)
+// New initializes a new database service
+func New() (Database, error) {
+	db, err := sql.Open("sqlite3", dbUrl)
 	if err != nil {
-		// This will not be a connection error, but a DSN parse error or
-		// another initialization error.
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
-	s := &service{db: db}
-	return s
+
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	return &database{db: db}, nil
 }
 
-func (s *service) Health() map[string]string {
+// Health checks the database connection and returns an error if it's down
+func (s *database) Health() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err := s.db.PingContext(ctx)
-	if err != nil {
-		log.Fatalf(fmt.Sprintf("db down: %v", err))
+	if err := s.db.PingContext(ctx); err != nil {
+		return fmt.Errorf("database down: %w", err)
 	}
 
-	return map[string]string{
-		"message": "It's healthy",
-	}
+	return nil
 }
