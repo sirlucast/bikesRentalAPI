@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -41,6 +42,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]string{"message": "Server is up and running"}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
+		log.Printf("error marshalling response: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
