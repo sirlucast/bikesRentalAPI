@@ -61,7 +61,7 @@ You are tasked with creating a simple RESTful API service for a bike rental comp
 ### Requirements
 
 1. The service should be written in Go version 1.21 or higher. Use Go modules for dependency management.
-2. The service should use the [Go-chi router](https:https://github.com/go-chi/chi), or the [standard library](https://golang.org/pkg/net/http/) for routing. Do not use frameworks like Gin, or Echo for this test.
+2. The service should use the [Go-chi router](https://github.com/go-chi/chi), or the [standard library](https://golang.org/pkg/net/http/) for routing. Do not use frameworks like Gin, or Echo for this test.
 3. The service should use [JWT](https://jwt.io/) for user authentication. You can use whatever JWT library you prefer or write your own.
 4. The service should user Basic Auth for admin authentication.
 5. The service should use [SQLite](https://www.sqlite.org/index.html) for data storage. Do not use an ORM library for this test, instead use the [database/sql](https://golang.org/pkg/database/sql/) package or [sqlx](https://github.com/jmoiron/sqlx), and any SQLite driver of your choice (for example, [go-sqlite3](https://github.com/mattn/go-sqlite3)).
