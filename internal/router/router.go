@@ -1,9 +1,12 @@
 package router
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
+
+	bikes "bikesRentalAPI/internal/bikes/handlers"
+	rentals "bikesRentalAPI/internal/rentals/handlers"
+	users "bikesRentalAPI/internal/users/handlers"
+	utils "bikesRentalAPI/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -32,22 +35,53 @@ func New() Router {
 // RegisterRoutes registers all routes for the application
 func (r *chiRouter) RegisterRoutes() http.Handler {
 	// Add routes here
-	r.Route("/", func(r chi.Router) {
-		r.Get("/status", statusHandler)
+
+	r.Get("/status", utils.StatusHandler) // TODO move to utils package
+
+	r.Route("/users", func(r chi.Router) {
+		// User authentication
+		r.Post("/register", users.RegisterUser)
+		r.Post("/login", users.LoginUser)
+		r.Group(func(r chi.Router) {
+			// User profile operations
+			// r.Use(UserAuthMiddleware) // TODO implement Auth middleware
+			r.Get("/profile", users.GetUserProfile)
+			r.Patch("/profile", users.UpdateUserProfile)
+		})
+	})
+
+	r.Route("/bikes", func(r chi.Router) {
+		// Bike rental operations
+		r.Group(func(r chi.Router) {
+			// r.Use(UserAuthMiddleware)
+			r.Get("/available", bikes.ListAvailableBikes)
+			r.Post("/start", bikes.StartBikeRental)
+			r.Post("/end", bikes.EndBikeRental)
+			r.Get("/history", bikes.GetRentalHistory)
+		})
+	})
+
+	r.Route("/admin", func(r chi.Router) {
+		// Administrative endpoints
+		// r.Use(AdminAuthMiddleware) // TODO implement Admin Auth middleware
+
+		r.Route("/bikes", func(r chi.Router) {
+			r.Post("/", bikes.AddBike)
+			r.Patch("/{bike_id}", bikes.UpdateBike)
+			r.Get("/", bikes.ListBikes)
+		})
+
+		r.Route("/users", func(r chi.Router) {
+			r.Get("/", users.ListUsers)
+			r.Get("/{user_id}", users.GetUserDetails)
+			r.Patch("/{user_id}", users.UpdateUserDetails)
+		})
+
+		r.Route("/rentals", func(r chi.Router) {
+			r.Get("/", rentals.ListRentals)
+			r.Get("/{rental_id}", rentals.GetRentalDetails)
+			r.Patch("/{rental_id}", rentals.UpdateRentalDetails)
+		})
 	})
 	return r
-}
-
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	resp := map[string]string{"message": "Server is up and running"}
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		log.Printf("error marshalling response: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(jsonResp)
 }
