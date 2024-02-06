@@ -10,6 +10,8 @@ Copy the env.example file to add your environment variables.
 cp env.example .env
 ```
 
+For manaqge migrations please use [golang-migrate CLI](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)
+
 WIP
 
 ## MakeFile

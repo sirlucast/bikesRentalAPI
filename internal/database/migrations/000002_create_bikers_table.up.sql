@@ -1,0 +1,10 @@
+
+CREATE TABLE IF NOT EXISTS bikes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    is_available BOOLEAN NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    price_per_minute REAL DEFAULT 0
+);
