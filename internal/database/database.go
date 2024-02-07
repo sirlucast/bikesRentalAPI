@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -15,9 +15,13 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
+var dbUrl = os.Getenv("DB_URL")
+
 type Database interface {
 	Start() error
 	Migrate() error
+	QueryRow(string, ...interface{}) *sql.Row
+	Exec(string, ...interface{}) (sql.Result, error)
 	Close() error
 	Health() error
 }
@@ -25,10 +29,6 @@ type Database interface {
 type database struct {
 	db *sql.DB
 }
-
-var (
-	dbUrl = os.Getenv("DB_URL")
-)
 
 // New initializes a new empty database service
 func New() Database {
@@ -58,10 +58,23 @@ func (d *database) Migrate() error {
 	}
 	// Run the migrations
 	err = m.Up()
-	if err != nil {
+	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("failed to run migrations: %v", err)
 	}
+	log.Println("Database migration completed successfully")
 	return nil
+}
+
+func (d *database) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return d.db.Exec(query, args...)
+}
+
+func (d *database) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return d.db.Query(query, args...)
+}
+
+func (d *database) QueryRow(query string, args ...interface{}) *sql.Row {
+	return d.db.QueryRow(query, args...)
 }
 
 // Health checks the database connection and returns an error if it's down

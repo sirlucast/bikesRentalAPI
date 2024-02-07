@@ -4,9 +4,10 @@ import (
 	"bikesRentalAPI/internal/database"
 	"bikesRentalAPI/internal/router"
 	"bikesRentalAPI/internal/server"
+	"bikesRentalAPI/internal/users/models"
 	"log"
 
-	"github.com/golang-migrate/migrate"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
@@ -32,9 +33,17 @@ func main() {
 
 	// Migrate the database
 	err = dbService.Migrate()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
+
+	// Seeds the database
+	seeder := database.NewSeeder(dbService)
+	err = seeder.Seed(models.User{})
+	if err != nil {
+		log.Fatalf("failed to seed database: %v", err)
+	}
+
 	// Create a new router service
 	routerService := router.New()
 
