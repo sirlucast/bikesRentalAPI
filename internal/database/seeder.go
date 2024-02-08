@@ -26,6 +26,7 @@ func NewSeeder(db Database) Seeder {
 // Seed populates the database with initial data
 func (s *seeder) Seed(user users.User) error {
 	username, password, err := adminCredentialsDecode()
+	username = strings.ToLower(username)
 	if err != nil {
 		return fmt.Errorf("failed Seed admin: %v", err)
 	}
