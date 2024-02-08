@@ -38,6 +38,7 @@ func GetHashPassword(password string) (string, error) {
 	bytePassword := []byte(password)
 	hash, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("Failed to hash password: %v", err)
 		return "", err
 	}
 	return string(hash), nil

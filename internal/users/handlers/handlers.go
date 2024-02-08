@@ -4,10 +4,13 @@ import (
 	"bikesRentalAPI/internal/helpers"
 	"bikesRentalAPI/internal/users/models"
 	"bikesRentalAPI/internal/users/repository"
-	"encoding/json"
-	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/go-chi/jwtauth/v5"
 )
 
 type Handler struct {
@@ -24,36 +27,64 @@ func RegisterUser(w http.ResponseWriter, req *http.Request) {
 	// TODO Implement user registration logic
 }
 
-// LoginUser ...
-func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
-	// TODO complete this
-	body, err := io.ReadAll(r.Body)
+// LoginUser receives a tokenAuth and a request and returns a response
+func (h *Handler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, r *http.Request) {
+
+	// Parse form data from request url-data encoded body
+	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Error reading request body",
-			http.StatusInternalServerError)
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Request body: %s\n", body)
-	var creds models.LoginUserRequest
-	err = json.Unmarshal(body, &creds)
-	if err != nil {
-		log.Printf("Error unmarshalling request body: %v", err)
-		http.Error(w, "Error unmarshalling request body",
-			http.StatusBadRequest)
-		return
+	credentials := models.LoginUserRequest{
+		Email:    r.FormValue("email"),
+		Password: r.FormValue("password"),
 	}
-	if creds.Email == "" || creds.Password == "" {
+
+	if credentials.Email == "" || credentials.Password == "" {
 		http.Error(w, "Missing username or password.", http.StatusBadRequest)
 		return
 	}
-	testUser, _ := h.UserRepo.GetUserByEmail(creds.Email)
-	helpers.WriteJSON(w, http.StatusOK, testUser)
+
+	loggedUser, err := h.UserRepo.GetUserByEmail(strings.ToLower(credentials.Email))
+	if err != nil {
+		log.Printf("Error getting user by email: %v", err)
+		http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
+		return
+	}
+
+	if !loggedUser.CheckPassword(credentials.Password) {
+		http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
+		return
+	}
+
+	claimsMap := map[string]interface{}{
+		"sub":       strconv.FormatInt(loggedUser.GetID(), 10),
+		"exp":       time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"email":     loggedUser.GetEmail(),
+		"firstName": loggedUser.GetFirstName(),
+		"lastName":  loggedUser.GetLastName(),
+	}
+
+	_, tokenString, err := tokenAuth.Encode(claimsMap)
+	if err != nil {
+		log.Printf("Error encoding token: %v", err)
+		http.Error(w, "Error encoding token", http.StatusInternalServerError)
+		return
+	}
+	loginResponse := models.LoginUserResponse{
+		Token: tokenString,
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, loginResponse)
 
 }
 
 // LoginUser ...
 func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	// TODO Implement logic to retrieve user profile
+	_, claims, _ := jwtauth.FromContext(r.Context())
+	helpers.WriteJSON(w, http.StatusOK, claims)
 }
 
 // UpdateUserProfile ...

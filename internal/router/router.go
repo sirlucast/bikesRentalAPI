@@ -38,6 +38,7 @@ func New() Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
+	r.Use(middleware.RequestID)
 	r.Use(middleware.Heartbeat("/status"))
 
 	return &chiRouter{r}
@@ -51,10 +52,12 @@ func (r *chiRouter) RegisterRoutes(userHandler *users.Handler) http.Handler {
 		// User authentication
 		r.Post("/register", users.RegisterUser)
 		r.Post("/register", users.RegisterUser)
-		r.Post("/login", userHandler.LoginUser)
+		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
+			userHandler.LoginUser(tokenAuth, w, r)
+		})
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))
-			//r.Use(jwtauth.Authenticator(tokenAuth))
+			r.Use(jwtauth.Authenticator(tokenAuth))
 			// User profile operations
 			// r.Use(UserAuthMiddleware) // TODO implement Auth middleware
 			r.Get("/profile", users.GetUserProfile)
@@ -63,8 +66,11 @@ func (r *chiRouter) RegisterRoutes(userHandler *users.Handler) http.Handler {
 	})
 
 	r.Route("/bikes", func(r chi.Router) {
+		r.Use(jwtauth.Verifier(tokenAuth))
+		r.Use(jwtauth.Authenticator(tokenAuth))
 		// Bike rental operations
 		r.Group(func(r chi.Router) {
+
 			// r.Use(UserAuthMiddleware)
 			r.Get("/available", bikes.ListAvailableBikes)
 			r.Post("/start", bikes.StartBikeRental)
@@ -74,9 +80,10 @@ func (r *chiRouter) RegisterRoutes(userHandler *users.Handler) http.Handler {
 	})
 
 	r.Route("/admin", func(r chi.Router) {
+		r.Use(jwtauth.Verifier(tokenAuth))
+		r.Use(jwtauth.Authenticator(tokenAuth))
 		// Administrative endpoints
 		// r.Use(AdminAuthMiddleware) // TODO implement Admin Auth middleware
-
 		r.Route("/bikes", func(r chi.Router) {
 			r.Post("/", bikes.AddBike)
 			r.Patch("/{bike_id}", bikes.UpdateBike)
