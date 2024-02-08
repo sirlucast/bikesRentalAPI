@@ -4,7 +4,9 @@ import (
 	"bikesRentalAPI/internal/database"
 	"bikesRentalAPI/internal/router"
 	"bikesRentalAPI/internal/server"
-	"bikesRentalAPI/internal/users/models"
+	userhandler "bikesRentalAPI/internal/users/handlers"
+	usermodels "bikesRentalAPI/internal/users/models"
+	userrepository "bikesRentalAPI/internal/users/repository"
 	"log"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -39,16 +41,21 @@ func main() {
 
 	// Seeds the database
 	seeder := database.NewSeeder(dbService)
-	err = seeder.Seed(models.User{})
+	err = seeder.Seed(usermodels.User{})
 	if err != nil {
 		log.Fatalf("failed to seed database: %v", err)
 	}
 
-	// Create a new router service
+	// Initialize the repositories
+	userRepository := userrepository.New(dbService)
+	userHandler := userhandler.New(userRepository)
+
+	// Create a new router service and register routes
 	routerService := router.New()
+	handler := routerService.RegisterRoutes(userHandler)
 
 	server, err := server.NewServerBuilder().
-		WithRouter(routerService).
+		WithHanlder(handler).
 		Build()
 	if err != nil {
 		log.Fatalf("failed to build server: %v", err)

@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -10,8 +9,6 @@ import (
 
 	"bikesRentalAPI/internal/helpers"
 	users "bikesRentalAPI/internal/users/models"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Seeder interface {
@@ -36,7 +33,7 @@ func (s *seeder) Seed(user users.User) error {
 	row := s.Database.QueryRow(queryString, username)
 	if err := row.Scan(&user.Email); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			hashedPassword, err := getHashPassword(password)
+			hashedPassword, err := helpers.GetHashPassword(password)
 			if err != nil {
 				return fmt.Errorf("failed to hash password: %v", err)
 			}
@@ -52,33 +49,9 @@ func (s *seeder) Seed(user users.User) error {
 	return nil
 }
 
-// getHashPassword calls bcrypts function to give us the hashed password
-func getHashPassword(password string) (string, error) {
-	bytePassword := []byte(password)
-	hash, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
-}
-
-// CheckPassword compares the hashed password with a string password
-func checkPassword(hashPassword, password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashPassword), []byte(password))
-	return err == nil
-}
-
-func base64Decode(str string) (string, bool) {
-	data, err := base64.StdEncoding.DecodeString(str)
-	if err != nil {
-		return "", true
-	}
-	return string(data), false
-}
-
 func adminCredentialsDecode() (string, string, error) {
 	adminCredentials := helpers.SafeGetEnv("ADMIN_CREDENTIALS")
-	decodedAdminCred, err := base64Decode(adminCredentials)
+	decodedAdminCred, err := helpers.Base64Decode(adminCredentials)
 	if err {
 		return "", "", fmt.Errorf("failed to decode admin credentials.")
 	}

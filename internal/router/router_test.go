@@ -24,16 +24,16 @@ func TestRouter(t *testing.T) {
 		// GIVEN: a router
 		router := New()
 		// WHEN: the routes are registered
-		handler := router.RegisterRoutes()
+		handler := router.RegisterRoutes(nil)
 		// THEN: the handler should be created successfully
 		assert.NotNil(t, handler)
 	})
-	t.Run("Success - statusHandler returns a status message", func(t *testing.T) {
+	t.Run("Success - statusHandler returns a status message: '.'", func(t *testing.T) {
 		// GIVEN: a router, a test server and expected message
 		router := New()
-		server := httptest.NewServer(router.RegisterRoutes())
+		server := httptest.NewServer(router.RegisterRoutes(nil))
 		defer server.Close()
-		expectedMessage := "Server is up and running"
+		expectedMessage := "." // default status message from Heartbeats middleware
 		// WHEN: a request is made to the server
 		resp, err := http.Get(server.URL + statusURL)
 		assert.NoError(t, err)

@@ -35,17 +35,18 @@ func TestServerBuilder(t *testing.T) {
 	t.Run("Success - WithRouter sets the router for the server", func(t *testing.T) {
 		// GIVEN: a server builder and a mock router
 		builder := NewServerBuilder()
-		router := &MockRouter{}
+
+		handler := http.NewServeMux()
 		// WHEN: the router is set for the server
-		builder.WithRouter(router)
+		builder.WithHanlder(handler)
 		// THEN: the router should be set for the server
-		assert.Equal(t, router, builder.Router)
+		assert.Equal(t, handler, builder.Handler)
 	})
 	t.Run("Success - Build creates and returns the configured server", func(t *testing.T) {
 		// GIVEN: a server builder and a mock router
 		builder := NewServerBuilder()
-		router := &MockRouter{}
-		builder.WithRouter(router)
+		handler := http.NewServeMux()
+		builder.WithHanlder(handler)
 		// WHEN: the server is built
 		server, err := builder.Build()
 		// THEN: the server should be built successfully

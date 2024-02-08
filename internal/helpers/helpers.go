@@ -1,12 +1,14 @@
 package helpers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func SafeGetEnv(key string) string {
@@ -29,4 +31,29 @@ func WriteJSON(rw http.ResponseWriter, status int, data interface{}) error {
 		return err
 	}
 	return nil
+}
+
+// getHashPassword calls bcrypts function to give us the hashed password
+func GetHashPassword(password string) (string, error) {
+	bytePassword := []byte(password)
+	hash, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// base64Decode decodes a base64 string
+func Base64Decode(str string) (string, bool) {
+	data, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return "", true
+	}
+	return string(data), false
+}
+
+// CheckPassword compares the hashed password with a string password
+func CheckPassword(hashPassword, password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashPassword), []byte(password))
+	return err == nil
 }
