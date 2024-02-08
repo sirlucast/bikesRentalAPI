@@ -12,6 +12,10 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 
 	// Create a new database service
@@ -60,7 +64,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to build server: %v", err)
 	}
-
 	log.Printf("Server running on port %s", server.Addr)
 	err = server.ListenAndServe()
 	if err != nil {
