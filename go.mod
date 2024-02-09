@@ -8,6 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lestrrat-go/jwx/v2 v2.0.17
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/mock v0.4.0
@@ -24,7 +25,6 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx/v2 v2.0.17 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	golang.org/x/net v0.18.0 // indirect
