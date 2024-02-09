@@ -5,7 +5,6 @@ import (
 	"bikesRentalAPI/internal/router"
 	"bikesRentalAPI/internal/server"
 	userhandler "bikesRentalAPI/internal/users/handlers"
-	usermodels "bikesRentalAPI/internal/users/models"
 	userrepository "bikesRentalAPI/internal/users/repository"
 	"log"
 
@@ -43,12 +42,12 @@ func main() {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
-	// Seeds the database
-	seeder := database.NewSeeder(dbService)
-	err = seeder.Seed(usermodels.User{})
-	if err != nil {
-		log.Fatalf("failed to seed database: %v", err)
-	}
+	// Seeds the database  - Uncomment to seed the database
+	//seeder := database.NewSeeder(dbService)
+	//err = seeder.Seed(usermodels.User{})
+	//if err != nil {
+	//	log.Fatalf("failed to seed database: %v", err)
+	//}
 
 	// Initialize the repositories
 	userRepository := userrepository.New(dbService)

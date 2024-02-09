@@ -27,31 +27,26 @@ func TestNewSeeder(t *testing.T) {
 
 func TestSeed(t *testing.T) {
 	testValues := []struct {
-		name             string
-		adminCredentials string
-		expectedError    error
+		name          string
+		creds         string
+		expectedError error
 	}{
 		{
-			name:             "success - admin user seeded: 'admin:password'",
-			adminCredentials: "YWRtaW46cGFzc3dvcmQ=",
-			expectedError:    nil,
+			name:          "success - admin user seeded: 'user@email.com:password'",
+			creds:         "'user@email.com:password",
+			expectedError: nil,
 		},
 		{
-			name:             "failure - admin credentials invalid format: 'admin.password'",
-			adminCredentials: "YWRtaW4ucGFzc3dvcmQ=",
-			expectedError:    fmt.Errorf("failed Seed admin: decoded admin credentials are not following <user:passowrd> shape."),
-		},
-		{
-			name:             "failure - admin credentials wrongly encoded",
-			adminCredentials: "admin:admin",
-			expectedError:    fmt.Errorf("failed Seed admin: failed to decode admin credentials."),
+			name:          "failure - admin credentials wrongly encoded",
+			creds:         "admin.admin",
+			expectedError: fmt.Errorf("failed Seed admin: failed to decode admin credentials."),
 		},
 	}
 	for test := range testValues {
 		t.Run(testValues[test].name, func(t *testing.T) {
 			// GIVEN: a database base url and admin credentials
 			t.Setenv("DB_URL", "file::memory:?cache=shared")
-			t.Setenv("ADMIN_CREDENTIALS", testValues[test].adminCredentials)
+			t.Setenv("USER_CREDENTIALS", testValues[test].creds)
 
 			// GIVEN: a database service
 			dbService := New()

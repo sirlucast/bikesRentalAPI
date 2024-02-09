@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"bikesRentalAPI/internal/helpers"
@@ -25,12 +26,12 @@ func NewSeeder(db Database) Seeder {
 
 // Seed populates the database with initial data
 func (s *seeder) Seed(user users.User) error {
-	username, password, err := adminCredentialsDecode()
+	username, password, err := userCredentialsDecode()
 	username = strings.ToLower(username)
 	if err != nil {
 		return fmt.Errorf("failed Seed admin: %v", err)
 	}
-	queryString := fmt.Sprintf("SELECT * FROM users WHERE email = ?")
+	queryString := "SELECT * FROM users WHERE email = ?"
 	row := s.Database.QueryRow(queryString, username)
 	if err := row.Scan(&user.Email); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -50,13 +51,9 @@ func (s *seeder) Seed(user users.User) error {
 	return nil
 }
 
-func adminCredentialsDecode() (string, string, error) {
-	adminCredentials := helpers.SafeGetEnv("ADMIN_CREDENTIALS")
-	decodedAdminCred, err := helpers.Base64Decode(adminCredentials)
-	if err {
-		return "", "", fmt.Errorf("failed to decode admin credentials.")
-	}
-	credentials := strings.Split(decodedAdminCred, ":")
+func userCredentialsDecode() (string, string, error) {
+	envCreds := os.Getenv("USER_CREDENTIALS")
+	credentials := strings.Split(envCreds, ":")
 	if len(credentials) != 2 {
 		return "", "", fmt.Errorf("decoded admin credentials are not following <user:passowrd> shape. Got: %v", credentials)
 	}
