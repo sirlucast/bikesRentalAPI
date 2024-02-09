@@ -1,12 +1,14 @@
 package router
 
 import (
+	"bikesRentalAPI/internal/users/handlers/mocks"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -14,6 +16,7 @@ const (
 )
 
 func TestRouter(t *testing.T) {
+	t.Setenv("ADMIN_CREDENTIALS", "dGVzdDp0ZXN0") // test:test
 	t.Run("Success - New returns a new router interface using the chi router", func(t *testing.T) {
 		// WHEN: the New function is called
 		router := New()
@@ -23,15 +26,24 @@ func TestRouter(t *testing.T) {
 	t.Run("Success - RegisterRoutes registers all routes for the application", func(t *testing.T) {
 		// GIVEN: a router
 		router := New()
+		// GIVEN a mock user handler
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockHandler := mocks.NewMockHandler(mockCtrl)
 		// WHEN: the routes are registered
-		handler := router.RegisterRoutes(nil)
+		handler := router.RegisterRoutes(mockHandler)
 		// THEN: the handler should be created successfully
 		assert.NotNil(t, handler)
 	})
 	t.Run("Success - statusHandler returns a status message: '.'", func(t *testing.T) {
 		// GIVEN: a router, a test server and expected message
 		router := New()
-		server := httptest.NewServer(router.RegisterRoutes(nil))
+		// GIVEN a mock user handler
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		mockHandler := mocks.NewMockHandler(mockCtrl)
+		// GIVEN: a test server
+		server := httptest.NewServer(router.RegisterRoutes(mockHandler))
 		defer server.Close()
 		expectedMessage := "." // default status message from Heartbeats middleware
 		// WHEN: a request is made to the server

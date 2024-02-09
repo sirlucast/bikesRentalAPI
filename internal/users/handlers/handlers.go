@@ -4,6 +4,7 @@ import (
 	"bikesRentalAPI/internal/helpers"
 	"bikesRentalAPI/internal/users/models"
 	"bikesRentalAPI/internal/users/repository"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 )
 
 type Handler interface {
+	RegisterUser(w http.ResponseWriter, req *http.Request)
 	LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request)
 }
 
@@ -35,8 +37,32 @@ func New(userRepo repository.UserRepository) Handler {
 }
 
 // RegisterUser ...
-func RegisterUser(w http.ResponseWriter, req *http.Request) {
-	// TODO Implement user registration logic
+func (h *handler) RegisterUser(w http.ResponseWriter, req *http.Request) {
+	// Parse body from request
+	body, err := helpers.ParseBody(req.Body)
+	if err != nil {
+		http.Error(w, "Error parsing body request", http.StatusBadRequest)
+		return
+	}
+	var newUser models.CreateUserRequest
+	err = json.Unmarshal(body, &newUser)
+	if err != nil {
+		http.Error(w, "Error unmarshalling body request", http.StatusBadRequest)
+		return
+	}
+	// Validate user input
+	err = h.validator.Struct(newUser)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation errors: %s", errors), http.StatusBadRequest)
+		return
+	}
+	id, err := h.UserRepo.CreateUser(newUser)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating user: %v", err), http.StatusInternalServerError)
+		return
+	}
+	helpers.WriteJSON(w, http.StatusCreated, id)
 
 }
 

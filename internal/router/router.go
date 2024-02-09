@@ -1,10 +1,13 @@
 package router
 
 import (
+	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	bikes "bikesRentalAPI/internal/bikes/handlers"
+	"bikesRentalAPI/internal/helpers"
 	rentals "bikesRentalAPI/internal/rentals/handlers"
 	users "bikesRentalAPI/internal/users/handlers"
 
@@ -22,12 +25,17 @@ type chiRouter struct {
 }
 
 var (
-	tokenAuth    *jwtauth.JWTAuth
-	secretJWTKey = os.Getenv("JWT_SECRET_KEY")
+	tokenAuth           *jwtauth.JWTAuth
+	adminCredentials    map[string]string
+	secretJWTKey        string
+	adminCredentialsEnc string
 )
 
 func init() {
+	secretJWTKey = os.Getenv("JWT_SECRET_KEY")
+	adminCredentialsEnc = os.Getenv("ADMIN_CREDENTIALS")
 	tokenAuth = jwtauth.New("HS256", []byte(secretJWTKey), nil)
+	adminCredentials = adminCredentialsDecode()
 }
 
 // New returns a new router interface using the chi router
@@ -38,7 +46,6 @@ func New() Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
-	r.Use(middleware.RequestID)
 	r.Use(middleware.Heartbeat("/status"))
 
 	return &chiRouter{r}
@@ -46,11 +53,10 @@ func New() Router {
 
 // RegisterRoutes registers all routes for the application
 func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
-
 	// Add routes here
 	r.Route("/users", func(r chi.Router) {
 		// User authentication
-		r.Post("/register", users.RegisterUser)
+		r.Post("/register", userHandler.RegisterUser)
 		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
 			userHandler.LoginUser(tokenAuth, w, r)
 
@@ -59,19 +65,16 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
 			// User profile operations
-			// r.Use(UserAuthMiddleware) // TODO implement Auth middleware
 			r.Get("/profile", users.GetUserProfile)
 			r.Patch("/profile", users.UpdateUserProfile)
 		})
 	})
 
 	r.Route("/bikes", func(r chi.Router) {
-		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(jwtauth.Authenticator(tokenAuth))
 		// Bike rental operations
 		r.Group(func(r chi.Router) {
-
-			// r.Use(UserAuthMiddleware)
+			r.Use(jwtauth.Verifier(tokenAuth))
+			r.Use(jwtauth.Authenticator(tokenAuth))
 			r.Get("/available", bikes.ListAvailableBikes)
 			r.Post("/start", bikes.StartBikeRental)
 			r.Post("/end", bikes.EndBikeRental)
@@ -80,32 +83,41 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
 	})
 
 	r.Route("/admin", func(r chi.Router) {
-		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(jwtauth.Authenticator(tokenAuth))
 		// Administrative endpoints
-		// r.Use(AdminAuthMiddleware) // TODO implement Admin Auth middleware
-		r.Route("/bikes", func(r chi.Router) {
-			r.Post("/", bikes.AddBike)
-			r.Patch("/{bike_id}", bikes.UpdateBike)
-			r.Get("/", bikes.ListBikes)
-		})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.BasicAuth("bikesRental API Administration", adminCredentials))
+			r.Route("/bikes", func(r chi.Router) {
+				r.Post("/", bikes.AddBike)
+				r.Patch("/{bike_id}", bikes.UpdateBike)
+				r.Get("/", bikes.ListBikes)
+			})
 
-		r.Route("/users", func(r chi.Router) {
-			r.Get("/", users.ListUsers)
-			r.Get("/{user_id}", users.GetUserDetails)
-			r.Patch("/{user_id}", users.UpdateUserDetails)
-		})
+			r.Route("/users", func(r chi.Router) {
+				r.Get("/", users.ListUsers)
+				r.Get("/{user_id}", users.GetUserDetails)
+				r.Patch("/{user_id}", users.UpdateUserDetails)
+			})
 
-		r.Route("/rentals", func(r chi.Router) {
-			r.Get("/", rentals.ListRentals)
-			r.Get("/{rental_id}", rentals.GetRentalDetails)
-			r.Patch("/{rental_id}", rentals.UpdateRentalDetails)
+			r.Route("/rentals", func(r chi.Router) {
+				r.Get("/", rentals.ListRentals)
+				r.Get("/{rental_id}", rentals.GetRentalDetails)
+				r.Patch("/{rental_id}", rentals.UpdateRentalDetails)
+			})
 		})
 	})
 	return r
 }
 
-func GenerateAuthToken() *jwtauth.JWTAuth {
-	tokenAuth := jwtauth.New("HS256", []byte(secretJWTKey), nil)
-	return tokenAuth
+func adminCredentialsDecode() map[string]string {
+	decodedAdminCred, err := helpers.Base64Decode(adminCredentialsEnc)
+	if err {
+		log.Printf("failed to decode admin credentials.")
+		return nil
+	}
+	credentials := strings.Split(decodedAdminCred, ":")
+	if len(credentials) != 2 {
+		log.Printf("decoded admin credentials are not following <user:passowrd> shape. Got: %v", credentials)
+		return nil
+	}
+	return map[string]string{credentials[0]: credentials[1]}
 }
