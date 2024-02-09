@@ -4,6 +4,7 @@ import (
 	"bikesRentalAPI/internal/helpers"
 	"bikesRentalAPI/internal/users/models"
 	"bikesRentalAPI/internal/users/repository"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,38 +12,52 @@ import (
 	"time"
 
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/go-playground/validator/v10"
 )
 
-type Handler struct {
-	UserRepo repository.UserRepository
+type Handler interface {
+	LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request)
+}
+
+type handler struct {
+	UserRepo  repository.UserRepository
+	validator *validator.Validate
 }
 
 // New returns a new user handler
-func New(userRepo repository.UserRepository) *Handler {
-	return &Handler{UserRepo: userRepo}
+func New(userRepo repository.UserRepository) Handler {
+	validator := validator.New(validator.WithRequiredStructEnabled())
+	handler := &handler{
+		UserRepo:  userRepo,
+		validator: validator,
+	}
+	return handler
 }
 
 // RegisterUser ...
 func RegisterUser(w http.ResponseWriter, req *http.Request) {
 	// TODO Implement user registration logic
+
 }
 
 // LoginUser receives a tokenAuth and a request and returns a response
-func (h *Handler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, r *http.Request) {
+func (h *handler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request) {
 
 	// Parse form data from request url-data encoded body
-	err := r.ParseForm()
+	err := req.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
 	}
-	credentials := models.LoginUserRequest{
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-	}
 
-	if credentials.Email == "" || credentials.Password == "" {
-		http.Error(w, "Missing username or password.", http.StatusBadRequest)
+	credentials := models.LoginUserRequest{
+		Email:    req.FormValue("email"),
+		Password: req.FormValue("password"),
+	}
+	err = h.validator.Struct(credentials)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation errors: %s", errors), http.StatusBadRequest)
 		return
 	}
 

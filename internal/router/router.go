@@ -14,7 +14,7 @@ import (
 )
 
 type Router interface {
-	RegisterRoutes(userHandler *users.Handler) http.Handler
+	RegisterRoutes(userHandler users.Handler) http.Handler
 }
 
 type chiRouter struct {
@@ -45,15 +45,15 @@ func New() Router {
 }
 
 // RegisterRoutes registers all routes for the application
-func (r *chiRouter) RegisterRoutes(userHandler *users.Handler) http.Handler {
+func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
 
 	// Add routes here
 	r.Route("/users", func(r chi.Router) {
 		// User authentication
 		r.Post("/register", users.RegisterUser)
-		r.Post("/register", users.RegisterUser)
 		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
 			userHandler.LoginUser(tokenAuth, w, r)
+
 		})
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))

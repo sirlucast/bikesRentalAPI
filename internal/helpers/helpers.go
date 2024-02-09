@@ -3,6 +3,8 @@ package helpers
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -31,6 +33,16 @@ func WriteJSON(rw http.ResponseWriter, status int, data interface{}) error {
 		return err
 	}
 	return nil
+}
+
+// ParseBody parses the body of a request and returns a map of strings
+func ParseBody(bodyReadCloser io.ReadCloser) ([]byte, error) {
+	body, err := io.ReadAll(bodyReadCloser)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read body: %v", err)
+	}
+	defer bodyReadCloser.Close()
+	return body, nil
 }
 
 // getHashPassword calls bcrypts function to give us the hashed password

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	testEmail      = "test"
+	testEmail      = "test@test.com"
 	testPsw        = "test"
 	testInvalidPsw = "invalid"
 	testSecretKey  = "test_key"
@@ -70,7 +70,7 @@ func TestLoginUser(t *testing.T) {
 			mockedUser:          models.User{},
 			expectedRepoError:   nil,
 			expectedHttpCode:    http.StatusBadRequest,
-			expectedResponseMsg: "Missing username or password",
+			expectedResponseMsg: "Validation errors",
 		},
 		{
 			name:                "Failure - LoginUser receives a tokenAuth and a invalid password request. Returns error 401",
@@ -84,9 +84,9 @@ func TestLoginUser(t *testing.T) {
 			expectedResponseMsg: "Invalid username or password",
 		},
 		{
-			name:                "Failure - LoginUser receives a tokenAuth and a invalid email request. Returns error 401",
+			name:                "Failure - LoginUser receives a tokenAuth and a non existing email request. Returns error 401",
 			testJWTAlg:          "HS256",
-			email:               "invalid_email",
+			email:               "invalid_email@email.com",
 			password:            testPsw,
 			callMock:            true,
 			mockedUser:          models.User{},
