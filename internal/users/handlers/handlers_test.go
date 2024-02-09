@@ -1,6 +1,5 @@
 package handlers
 
-// TODO Adds tests for the user handlers
 import (
 	"bikesRentalAPI/internal/helpers"
 	"bikesRentalAPI/internal/users/models"
@@ -37,7 +36,7 @@ var (
 func TestLoginUser(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockAppointmentRepo := mocks.NewMockUserRepository(mockCtrl)
+	mockUsersRepo := mocks.NewMockUserRepository(mockCtrl)
 
 	testCases := []struct {
 		testJWTAlg          string
@@ -111,7 +110,7 @@ func TestLoginUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.callMock {
 				// GIVEN: a mocked user from repository
-				mockAppointmentRepo.EXPECT().GetUserByEmail(gomock.Any()).Return(tc.mockedUser, tc.expectedRepoError).Times(1)
+				mockUsersRepo.EXPECT().GetUserByEmail(gomock.Any()).Return(tc.mockedUser, tc.expectedRepoError).Times(1)
 			}
 			// GIVEN: a tokenAuth
 			testTokenAuth = jwtauth.New(tc.testJWTAlg, []byte(testSecretKey), nil)
@@ -125,7 +124,7 @@ func TestLoginUser(t *testing.T) {
 			// GIVEN a recorder to record the response
 			rr := httptest.NewRecorder()
 			// GIVEN a user handler
-			userHandler := New(mockAppointmentRepo)
+			userHandler := New(mockUsersRepo)
 			handler := http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
 					userHandler.LoginUser(testTokenAuth, w, r)
@@ -175,23 +174,4 @@ func TestUpdateUserDetails(t *testing.T) {
 	// GIVEN: a request to update user details
 	// WHEN: the request is made
 	// THEN: the user details should be updated
-}
-
-// TestUserRepo is the interface that represents your repository
-type TestUserRepo interface {
-	GetUserByEmail(email int) (*models.User, error)
-}
-
-// MockUserRepo is the mock implementation of UserRepo for testing
-type MockUserRepo struct {
-	users map[int]*models.User
-}
-
-// GetUser is the mock implementation of the GetUser method
-func (m *MockUserRepo) GetUserByEmail(id int) (*models.User, error) {
-	user, ok := m.users[id]
-	if !ok {
-		return nil, fmt.Errorf("User not found")
-	}
-	return user, nil
 }
