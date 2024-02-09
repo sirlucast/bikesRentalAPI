@@ -51,6 +51,10 @@ func (d *database) Start() error {
 
 func (d *database) Migrate() error {
 	driver, err := sqlite3.WithInstance(d.db, &sqlite3.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to create driver: %v", err)
+	}
+	// Create a new migration
 	m, err := migrate.NewWithDatabaseInstance("file://internal/database/migrations", dbUrl, driver)
 
 	if err != nil {
