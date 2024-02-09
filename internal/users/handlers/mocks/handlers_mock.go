@@ -40,6 +40,18 @@ func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 	return m.recorder
 }
 
+// GetUserProfile mocks base method.
+func (m *MockHandler) GetUserProfile(w http.ResponseWriter, req *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetUserProfile", w, req)
+}
+
+// GetUserProfile indicates an expected call of GetUserProfile.
+func (mr *MockHandlerMockRecorder) GetUserProfile(w, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockHandler)(nil).GetUserProfile), w, req)
+}
+
 // LoginUser mocks base method.
 func (m *MockHandler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request) {
 	m.ctrl.T.Helper()
@@ -62,4 +74,16 @@ func (m *MockHandler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 func (mr *MockHandlerMockRecorder) RegisterUser(w, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterUser", reflect.TypeOf((*MockHandler)(nil).RegisterUser), w, req)
+}
+
+// UpdateUserProfile mocks base method.
+func (m *MockHandler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateUserProfile", w, req)
+}
+
+// UpdateUserProfile indicates an expected call of UpdateUserProfile.
+func (mr *MockHandlerMockRecorder) UpdateUserProfile(w, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserProfile", reflect.TypeOf((*MockHandler)(nil).UpdateUserProfile), w, req)
 }

@@ -19,6 +19,8 @@ import (
 type Handler interface {
 	RegisterUser(w http.ResponseWriter, req *http.Request)
 	LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request)
+	GetUserProfile(w http.ResponseWriter, req *http.Request)
+	UpdateUserProfile(w http.ResponseWriter, req *http.Request)
 }
 
 type handler struct {
@@ -121,16 +123,106 @@ func (h *handler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, r
 
 }
 
-// LoginUser ...
-func GetUserProfile(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to retrieve user profile
-	_, claims, _ := jwtauth.FromContext(r.Context())
-	helpers.WriteJSON(w, http.StatusOK, claims)
+// GetUserProfile ...
+func (h *handler) GetUserProfile(w http.ResponseWriter, req *http.Request) {
+	_, claims, err := jwtauth.FromContext(req.Context())
+	if err != nil {
+		http.Error(w, "Error getting user claims", http.StatusInternalServerError)
+		return
+	}
+	userId, err := strconv.Atoi(claims["sub"].(string))
+	if err != nil {
+		fmt.Println("value is not a string")
+	}
+	user, err := h.UserRepo.GetUserByID(int64(userId))
+	if err != nil {
+		log.Printf("Error getting user: %v", err)
+		http.Error(w, "Error getting user", http.StatusInternalServerError)
+		return
+	}
+	helpers.WriteJSON(w, http.StatusOK, user)
 }
 
 // UpdateUserProfile ...
-func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to update user profile
+func (h *handler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
+	_, claims, err := jwtauth.FromContext(req.Context())
+	if err != nil {
+		http.Error(w, "Error getting user claims", http.StatusInternalServerError)
+		return
+	}
+	body, err := helpers.ParseBody(req.Body)
+	if err != nil {
+		http.Error(w, "Error parsing body request", http.StatusBadRequest)
+		return
+	}
+	var updateUserReq models.UpdateUserRequest
+	err = json.Unmarshal(body, &updateUserReq)
+	if err != nil {
+		http.Error(w, "Error unmarshalling body request", http.StatusBadRequest)
+		return
+	}
+	// Validate user input
+	err = h.validator.Struct(updateUserReq)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation errors: %s", errors), http.StatusBadRequest)
+		return
+	}
+
+	// Get user from database
+	userId, err := strconv.Atoi(claims["sub"].(string))
+	if err != nil {
+		log.Printf("Error getting user id from claims: %v", err)
+		http.Error(w, "Not valid sub in claims", http.StatusUnauthorized)
+	}
+
+	user, err := h.UserRepo.GetUserByID(int64(userId))
+	if err != nil {
+		log.Printf("Error getting user: %v", err)
+		http.Error(w, "Error getting user", http.StatusInternalServerError)
+		return
+	}
+
+	// Compare attributes to identify modifications
+	fieldsToUpdate, err := getFieldsToUpdate(&updateUserReq, &user)
+	if err != nil {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	// Update user
+	result, err := h.UserRepo.UpdateUser(userId, fieldsToUpdate)
+	if err != nil {
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		return
+	}
+	updateUserResp := models.UpdateUserResponse{
+		UserID:  result,
+		Message: "User updated successfully",
+	}
+	helpers.WriteJSON(w, http.StatusOK, updateUserResp)
+}
+
+// getFieldsToUpdate ...
+func getFieldsToUpdate(updateUserReq *models.UpdateUserRequest, user *models.User) (map[string]interface{}, error) {
+	if updateUserReq == nil || user == nil {
+		return nil, fmt.Errorf("no fields to update")
+	}
+	fieldsToUpdate := make(map[string]interface{})
+	if updateUserReq.Email != nil && *updateUserReq.Email != user.GetEmail() {
+		fieldsToUpdate["email"] = *updateUserReq.Email
+	}
+	if updateUserReq.FirstName != nil && *updateUserReq.FirstName != user.GetFirstName() {
+		fieldsToUpdate["first_name"] = *updateUserReq.FirstName
+	}
+	if updateUserReq.LastName != nil && *updateUserReq.LastName != user.GetLastName() {
+		fieldsToUpdate["last_name"] = *updateUserReq.LastName
+	}
+
+	if len(fieldsToUpdate) == 0 {
+		return nil, fmt.Errorf("no fields to update")
+	}
+	return fieldsToUpdate, nil
 }
 
 // Admin access only

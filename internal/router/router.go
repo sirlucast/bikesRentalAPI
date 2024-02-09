@@ -46,6 +46,7 @@ func New() Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
+	r.Use(middleware.RequestID)
 	r.Use(middleware.Heartbeat("/status"))
 
 	return &chiRouter{r}
@@ -65,8 +66,8 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
 			// User profile operations
-			r.Get("/profile", users.GetUserProfile)
-			r.Patch("/profile", users.UpdateUserProfile)
+			r.Get("/profile", userHandler.GetUserProfile)
+			r.Patch("/profile", userHandler.UpdateUserProfile)
 		})
 	})
 

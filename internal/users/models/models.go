@@ -8,13 +8,13 @@ import (
 
 // User model
 type User struct {
-	ID             int64
-	Email          string
-	HashedPassword string
-	FirstName      *string
-	LastName       *string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID             int64     `json:"id,omitempty"`
+	Email          string    `json:"email,omitempty"`
+	HashedPassword string    `json:"password,omitempty"`
+	FirstName      *string   `json:"first_name,omitempty"`
+	LastName       *string   `json:"last_name,omitempty"`
+	CreatedAt      time.Time `json:"created_at,omitempty"`
+	UpdatedAt      time.Time `json:"updated_at,omitempty"`
 }
 
 func (u *User) FullName() string {
@@ -57,7 +57,7 @@ func (u *User) GetEmail() string {
 }
 
 type LoginUserRequest struct {
-	Email    string `json:"email" validate:"required,email"`
+	Email    string `json:"email" validate:"required,email,omitempty"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -66,25 +66,23 @@ type LoginUserResponse struct {
 }
 
 type CreateUserRequest struct {
-	Email     string `json:"email" validate:"required,email"`
+	Email     string `json:"email" validate:"required,email,omitempty"`
 	Password  string `json:"password" validate:"required"`
-	FirstName string `json:"first_name" validate:"required"`
-	LastName  string `json:"last_name" validate:"required"`
-}
-
-type CreateUserResponse struct {
-	ID        int64  `json:"id"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	FirstName string `json:"first_name" validate:"required,max=50"`
+	LastName  string `json:"last_name" validate:"required,max=50"`
 }
 
 type UpdateUserRequest struct {
-	ID        int64  `json:"id"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Passowrd  string `json:"password"`
+	Email     *string `json:"email" validate:"omitempty,email"`
+	FirstName *string `json:"first_name" validate:"omitempty,max=50"`
+	LastName  *string `json:"last_name" validate:"omitempty,max=50"`
+	//NewPassowrd string  `json:"new_password" validate:"omitempty"`
+	//OldPassword string  `json:"old_password" validate:"omitempty"`
+}
+
+type UpdateUserResponse struct {
+	UserID  int64
+	Message string
 }
 
 type Claims struct {
