@@ -22,6 +22,7 @@ type Database interface {
 	Migrate() error
 	QueryRow(string, ...interface{}) *sql.Row
 	Exec(string, ...interface{}) (sql.Result, error)
+	Prepare(string) (*sql.Stmt, error)
 	Close() error
 	Health() error
 }
@@ -79,6 +80,10 @@ func (d *database) Query(query string, args ...interface{}) (*sql.Rows, error) {
 
 func (d *database) QueryRow(query string, args ...interface{}) *sql.Row {
 	return d.db.QueryRow(query, args...)
+}
+
+func (d *database) Prepare(query string) (*sql.Stmt, error) {
+	return d.db.Prepare(query)
 }
 
 // Health checks the database connection and returns an error if it's down
