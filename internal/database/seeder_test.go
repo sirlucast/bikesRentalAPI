@@ -1,7 +1,6 @@
 package database
 
 import (
-	"bikesRentalAPI/internal/users/models"
 	"fmt"
 	"testing"
 
@@ -57,7 +56,7 @@ func TestSeed(t *testing.T) {
 			seeder := NewSeeder(dbService)
 
 			// WHEN: calls to Seed
-			err := seeder.Seed(models.User{})
+			err := seeder.SeedUser()
 
 			if testValues[test].expectedError != nil {
 

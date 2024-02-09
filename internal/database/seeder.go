@@ -13,7 +13,8 @@ import (
 )
 
 type Seeder interface {
-	Seed(users.User) error
+	SeedUser() error
+	SeedBikes() error
 }
 
 type seeder struct {
@@ -25,11 +26,12 @@ func NewSeeder(db Database) Seeder {
 }
 
 // Seed populates the database with initial data
-func (s *seeder) Seed(user users.User) error {
+func (s *seeder) SeedUser() error {
+	user := users.User{}
 	username, password, err := userCredentialsDecode()
 	username = strings.ToLower(username)
 	if err != nil {
-		return fmt.Errorf("failed Seed admin: %v", err)
+		return fmt.Errorf("failed Seed user: %v", err)
 	}
 	queryString := "SELECT * FROM users WHERE email = ?"
 	row := s.Database.QueryRow(queryString, username)
@@ -41,13 +43,29 @@ func (s *seeder) Seed(user users.User) error {
 			}
 			_, err = s.Database.Exec("INSERT INTO users (email, hashed_password) VALUES (?, ?)", username, hashedPassword)
 			if err != nil {
-				return fmt.Errorf("failed to insert admin user: %v", err)
+				return fmt.Errorf("failed to insert user: %v", err)
 			}
-			log.Printf("admin user succesfully seeded")
+			log.Printf("user succesfully seeded")
 			return nil
 		}
 	}
-	log.Printf("admin user already exists")
+	log.Printf("user already exists")
+	return nil
+}
+
+func (s *seeder) SeedBikes() error {
+	PricePerMinute := 0.07
+	latitude := 51.5098387087398
+	longitude := -0.1626587921593317
+	queryString := "INSERT INTO bikes (is_available, price_per_minute, latitude, longitude) VALUES (?, ?, ?, ?)"
+	// Insert 10 bikes
+	for i := 0; i < 10; i++ {
+		_, err := s.Database.Exec(queryString, true, PricePerMinute, latitude, longitude)
+		if err != nil {
+			return fmt.Errorf("failed to insert bike: %v", err)
+		}
+	}
+	log.Printf("bikes succesfully seeded")
 	return nil
 }
 
