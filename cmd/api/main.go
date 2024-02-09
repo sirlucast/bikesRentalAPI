@@ -1,6 +1,8 @@
 package main
 
 import (
+	bikehandler "bikesRentalAPI/internal/bikes/handlers"
+	bikerepository "bikesRentalAPI/internal/bikes/repository"
 	"bikesRentalAPI/internal/database"
 	"bikesRentalAPI/internal/router"
 	"bikesRentalAPI/internal/server"
@@ -42,20 +44,30 @@ func main() {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
-	// Seeds the database  - Uncomment to seed the database
+	// - will move this to a better place
+	// Seeds the database
 	//seeder := database.NewSeeder(dbService)
-	//err = seeder.Seed(usermodels.User{})
+	//err = seeder.Seed()
 	//if err != nil {
 	//	log.Fatalf("failed to seed database: %v", err)
 	//}
 
-	// Initialize the repositories
+	//bikesSeeder := database.NewSeeder(dbService)
+	//err = bikesSeeder.SeedBikes()
+	//if err != nil {
+	//	log.Fatalf("failed to seed database: %v", err)
+	//}
+	// - end of seeds
+
+	// Initialize the repositories and handlers
 	userRepository := userrepository.New(dbService)
 	userHandler := userhandler.New(userRepository)
+	bikeRepository := bikerepository.New(dbService)
+	bikeHandler := bikehandler.New(bikeRepository)
 
 	// Create a new router service and register routes
 	routerService := router.New()
-	handler := routerService.RegisterRoutes(userHandler)
+	handler := routerService.RegisterRoutes(userHandler, bikeHandler)
 
 	server, err := server.NewServerBuilder().
 		WithHanlder(handler).

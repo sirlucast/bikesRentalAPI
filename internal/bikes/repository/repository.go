@@ -25,7 +25,7 @@ func New(db database.Database) BikeRepository {
 
 // ListAvailableBikes retrieves all available bikes from the database
 func (r *bikeRepository) ListAvailableBikes() ([]models.Bike, error) {
-	query := "SELECT * FROM bikes WHERE available = ?"
+	query := "SELECT id, is_available, price_per_minute FROM bikes WHERE is_available = ?"
 	rows, err := r.db.Query(query, true)
 	if err != nil {
 		return nil, err

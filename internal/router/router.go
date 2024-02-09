@@ -17,7 +17,7 @@ import (
 )
 
 type Router interface {
-	RegisterRoutes(userHandler users.Handler) http.Handler
+	RegisterRoutes(userHandler users.Handler, bikeHandler bikes.Handler) http.Handler
 }
 
 type chiRouter struct {
@@ -53,7 +53,7 @@ func New() Router {
 }
 
 // RegisterRoutes registers all routes for the application
-func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
+func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.Handler) http.Handler {
 	// Add routes here
 	r.Route("/users", func(r chi.Router) {
 		// User authentication
@@ -76,7 +76,7 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
-			r.Get("/available", bikes.ListAvailableBikes)
+			r.Get("/available", bikeHandler.ListAvailableBikes)
 			r.Post("/start", bikes.StartBikeRental)
 			r.Post("/end", bikes.EndBikeRental)
 			r.Get("/history", bikes.GetRentalHistory)
@@ -88,9 +88,9 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.BasicAuth("bikesRental API Administration", adminCredentials))
 			r.Route("/bikes", func(r chi.Router) {
-				r.Post("/", bikes.AddBike)
-				r.Patch("/{bike_id}", bikes.UpdateBike)
-				r.Get("/", bikes.ListBikes)
+				r.Post("/", bikeHandler.AddBike)
+				r.Patch("/{bike_id}", bikeHandler.UpdateBike)
+				r.Get("/", bikeHandler.ListAllBikes)
 			})
 
 			r.Route("/users", func(r chi.Router) {

@@ -1,10 +1,50 @@
 package handlers
 
-import "net/http"
+import (
+	"bikesRentalAPI/internal/bikes/repository"
+	"bikesRentalAPI/internal/helpers"
+	"log"
+	"net/http"
 
-// ListAvailableBikes ...
-func ListAvailableBikes(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to list available bikes
+	"github.com/go-playground/validator/v10"
+)
+
+type Handler interface {
+	ListAvailableBikes(w http.ResponseWriter, req *http.Request)
+	AddBike(w http.ResponseWriter, req *http.Request)
+	UpdateBike(w http.ResponseWriter, req *http.Request)
+	ListAllBikes(w http.ResponseWriter, req *http.Request)
+}
+
+type handler struct {
+	BikeRepo  repository.BikeRepository
+	validator *validator.Validate
+}
+
+// New returns a new user handler
+func New(BikeRepository repository.BikeRepository) Handler {
+	validator := validator.New(validator.WithRequiredStructEnabled())
+	handler := &handler{
+		BikeRepo:  BikeRepository,
+		validator: validator,
+	}
+	return handler
+}
+
+// ListAvailableBikes for users
+func (h *handler) ListAvailableBikes(w http.ResponseWriter, r *http.Request) {
+	// TODO Implement logic to list available bikes for rental
+	// 1. Get all available bikes
+	// 2. Return the list of available bikes
+	bikes, err := h.BikeRepo.ListAvailableBikes()
+	if err != nil {
+		log.Printf("Error getting available bikes: %v", err)
+		http.Error(w, "Error getting available bikes", http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, bikes)
+
 }
 
 // StartBikeRental ...
@@ -25,16 +65,16 @@ func GetRentalHistory(w http.ResponseWriter, r *http.Request) {
 // Admin access only
 
 // AddBike ...
-func AddBike(w http.ResponseWriter, r *http.Request) {
+func (h *handler) AddBike(w http.ResponseWriter, r *http.Request) {
 	// TODO Implement logic to add a new bike
 }
 
 // UpdateBike ...
-func UpdateBike(w http.ResponseWriter, r *http.Request) {
+func (h *handler) UpdateBike(w http.ResponseWriter, r *http.Request) {
 	// TODO Implement logic to update bike details
 }
 
 // DeleteBike ...
-func ListBikes(w http.ResponseWriter, r *http.Request) {
+func (h *handler) ListAllBikes(w http.ResponseWriter, r *http.Request) {
 	// TODO Implement logic to list all bikes
 }
