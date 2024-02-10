@@ -55,10 +55,10 @@ func (mr *MockUserRepositoryMockRecorder) CreateUser(arg0 any) *gomock.Call {
 }
 
 // GetUserByEmail mocks base method.
-func (m *MockUserRepository) GetUserByEmail(arg0 string) (models.User, error) {
+func (m *MockUserRepository) GetUserByEmail(arg0 string) (*models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByEmail", arg0)
-	ret0, _ := ret[0].(models.User)
+	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -70,10 +70,10 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByEmail(arg0 any) *gomock.Call 
 }
 
 // GetUserByID mocks base method.
-func (m *MockUserRepository) GetUserByID(arg0 int64) (models.User, error) {
+func (m *MockUserRepository) GetUserByID(arg0 int64) (*models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByID", arg0)
-	ret0, _ := ret[0].(models.User)
+	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -84,8 +84,23 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByID(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockUserRepository)(nil).GetUserByID), arg0)
 }
 
+// ListAllUsers mocks base method.
+func (m *MockUserRepository) ListAllUsers(arg0 int64) (*models.UserList, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAllUsers", arg0)
+	ret0, _ := ret[0].(*models.UserList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAllUsers indicates an expected call of ListAllUsers.
+func (mr *MockUserRepositoryMockRecorder) ListAllUsers(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllUsers", reflect.TypeOf((*MockUserRepository)(nil).ListAllUsers), arg0)
+}
+
 // UpdateUser mocks base method.
-func (m *MockUserRepository) UpdateUser(userID int, fieldsToUpdate map[string]any) (int64, error) {
+func (m *MockUserRepository) UpdateUser(userID int64, fieldsToUpdate map[string]any) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUser", userID, fieldsToUpdate)
 	ret0, _ := ret[0].(int64)

@@ -40,6 +40,18 @@ func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 	return m.recorder
 }
 
+// GetUserDetails mocks base method.
+func (m *MockHandler) GetUserDetails(w http.ResponseWriter, req *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetUserDetails", w, req)
+}
+
+// GetUserDetails indicates an expected call of GetUserDetails.
+func (mr *MockHandlerMockRecorder) GetUserDetails(w, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserDetails", reflect.TypeOf((*MockHandler)(nil).GetUserDetails), w, req)
+}
+
 // GetUserProfile mocks base method.
 func (m *MockHandler) GetUserProfile(w http.ResponseWriter, req *http.Request) {
 	m.ctrl.T.Helper()
@@ -50,6 +62,18 @@ func (m *MockHandler) GetUserProfile(w http.ResponseWriter, req *http.Request) {
 func (mr *MockHandlerMockRecorder) GetUserProfile(w, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockHandler)(nil).GetUserProfile), w, req)
+}
+
+// ListAllUsers mocks base method.
+func (m *MockHandler) ListAllUsers(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListAllUsers", w, r)
+}
+
+// ListAllUsers indicates an expected call of ListAllUsers.
+func (mr *MockHandlerMockRecorder) ListAllUsers(w, r any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllUsers", reflect.TypeOf((*MockHandler)(nil).ListAllUsers), w, r)
 }
 
 // LoginUser mocks base method.
@@ -74,6 +98,18 @@ func (m *MockHandler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 func (mr *MockHandlerMockRecorder) RegisterUser(w, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterUser", reflect.TypeOf((*MockHandler)(nil).RegisterUser), w, req)
+}
+
+// UpdateUserDetails mocks base method.
+func (m *MockHandler) UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateUserDetails", w, r)
+}
+
+// UpdateUserDetails indicates an expected call of UpdateUserDetails.
+func (mr *MockHandlerMockRecorder) UpdateUserDetails(w, r any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserDetails", reflect.TypeOf((*MockHandler)(nil).UpdateUserDetails), w, r)
 }
 
 // UpdateUserProfile mocks base method.
