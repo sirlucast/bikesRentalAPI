@@ -8,6 +8,7 @@ import (
 
 	bikes "bikesRentalAPI/internal/bikes/handlers"
 	"bikesRentalAPI/internal/helpers"
+	"bikesRentalAPI/internal/middlewares"
 	rentals "bikesRentalAPI/internal/rentals/handlers"
 	users "bikesRentalAPI/internal/users/handlers"
 
@@ -76,7 +77,7 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
-			r.Get("/available", bikeHandler.ListAvailableBikes)
+			r.With(middlewares.Pagination).Get("/available", bikeHandler.ListAvailableBikes)
 			r.Post("/start", bikes.StartBikeRental)
 			r.Post("/end", bikes.EndBikeRental)
 			r.Get("/history", bikes.GetRentalHistory)

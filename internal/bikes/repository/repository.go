@@ -4,11 +4,17 @@ import (
 	"bikesRentalAPI/internal/bikes/models"
 	"bikesRentalAPI/internal/database"
 	"fmt"
+	"log"
 	"strings"
 )
 
+const (
+	// pageSize is the number of items to return in a page, 10 as default.
+	pageSize = 10
+)
+
 type BikeRepository interface {
-	ListAvailableBikes() ([]models.Bike, error)
+	ListAvailableBikes(PageID int64) (*models.BikeList, error)
 	ListAllBikes() ([]models.Bike, error)
 	UpdateBike(bikeID int, fieldsToUpdate map[string]interface{}) (int64, error)
 	CreateBike(bike models.Bike) (int64, error)
@@ -24,22 +30,29 @@ func New(db database.Database) BikeRepository {
 }
 
 // ListAvailableBikes retrieves all available bikes from the database
-func (r *bikeRepository) ListAvailableBikes() ([]models.Bike, error) {
-	query := "SELECT id, is_available, price_per_minute FROM bikes WHERE is_available = ?"
-	rows, err := r.db.Query(query, true)
+func (r *bikeRepository) ListAvailableBikes(PageID int64) (*models.BikeList, error) {
+	query := "SELECT id, is_available, price_per_minute FROM bikes WHERE is_available = ? AND id > ? ORDER BY id LIMIT ?"
+	rows, err := r.db.Query(query, true, PageID, pageSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var bikes []models.Bike
+	bikes := &models.BikeList{}
+	bikeList := make([]*models.Bike, 0)
 	for rows.Next() {
 		var bike models.Bike
 		if err := rows.Scan(&bike.ID, &bike.IsAvailable, &bike.PricePerMinute); err != nil {
 			return nil, err
 		}
-		bikes = append(bikes, bike)
+
+		bikeList = append(bikeList, &bike)
 	}
+	if len(bikeList) == pageSize {
+		bikes.NextPageID = bikeList[len(bikeList)-1].ID
+	}
+	bikes.Items = bikeList
+	log.Printf("bikes: %v", bikes)
 	return bikes, nil
 }
 

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bikesRentalAPI/internal/bikes/repository"
 	"bikesRentalAPI/internal/helpers"
+	"bikesRentalAPI/internal/middlewares"
 	"log"
 	"net/http"
 
@@ -33,10 +34,8 @@ func New(BikeRepository repository.BikeRepository) Handler {
 
 // ListAvailableBikes for users
 func (h *handler) ListAvailableBikes(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to list available bikes for rental
-	// 1. Get all available bikes
-	// 2. Return the list of available bikes
-	bikes, err := h.BikeRepo.ListAvailableBikes()
+	pageID := r.Context().Value(middlewares.PageIDKey)
+	bikes, err := h.BikeRepo.ListAvailableBikes(pageID.(int64))
 	if err != nil {
 		log.Printf("Error getting available bikes: %v", err)
 		http.Error(w, "Error getting available bikes", http.StatusInternalServerError)
