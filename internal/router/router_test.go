@@ -1,7 +1,9 @@
 package router
 
 import (
-	"bikesRentalAPI/internal/users/handlers/mocks"
+	bikemocks "bikesRentalAPI/internal/bikes/handlers/mocks"
+	usermocks "bikesRentalAPI/internal/users/handlers/mocks"
+
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +19,12 @@ const (
 
 func TestRouter(t *testing.T) {
 	t.Setenv("ADMIN_CREDENTIALS", "dGVzdDp0ZXN0") // test:test
+	// GIVEN a mock user handler
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockUserHandler := usermocks.NewMockHandler(mockCtrl)
+	mockBikeHandler := bikemocks.NewMockHandler(mockCtrl)
+
 	t.Run("Success - New returns a new router interface using the chi router", func(t *testing.T) {
 		// WHEN: the New function is called
 		router := New()
@@ -26,24 +34,18 @@ func TestRouter(t *testing.T) {
 	t.Run("Success - RegisterRoutes registers all routes for the application", func(t *testing.T) {
 		// GIVEN: a router
 		router := New()
-		// GIVEN a mock user handler
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
-		mockHandler := mocks.NewMockHandler(mockCtrl)
 		// WHEN: the routes are registered
-		handler := router.RegisterRoutes(mockHandler)
+		handler := router.RegisterRoutes(mockUserHandler, mockBikeHandler)
 		// THEN: the handler should be created successfully
 		assert.NotNil(t, handler)
 	})
 	t.Run("Success - statusHandler returns a status message: '.'", func(t *testing.T) {
 		// GIVEN: a router, a test server and expected message
 		router := New()
-		// GIVEN a mock user handler
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
-		mockHandler := mocks.NewMockHandler(mockCtrl)
+		// WHEN: the routes are registered
+		handler := router.RegisterRoutes(mockUserHandler, mockBikeHandler)
 		// GIVEN: a test server
-		server := httptest.NewServer(router.RegisterRoutes(mockHandler))
+		server := httptest.NewServer(handler)
 		defer server.Close()
 		expectedMessage := "." // default status message from Heartbeats middleware
 		// WHEN: a request is made to the server
