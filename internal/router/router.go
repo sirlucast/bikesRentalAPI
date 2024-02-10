@@ -61,7 +61,6 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 		r.Post("/register", userHandler.RegisterUser)
 		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
 			userHandler.LoginUser(tokenAuth, w, r)
-
 		})
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))
@@ -73,14 +72,15 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 	})
 
 	r.Route("/bikes", func(r chi.Router) {
-		// Bike rental operations
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(tokenAuth))
 			r.Use(jwtauth.Authenticator(tokenAuth))
+			// Bike general operations
 			r.With(middlewares.Pagination).Get("/available", bikeHandler.ListAvailableBikes)
-			r.Post("/start", bikes.StartBikeRental)
-			r.Post("/end", bikes.EndBikeRental)
-			r.Get("/history", bikes.GetRentalHistory)
+			// Bike rental operations
+			r.Post("/start", rentals.StartBikeRental)
+			r.Post("/end", rentals.EndBikeRental)
+			r.With(middlewares.Pagination).Get("/history", rentals.GetRentalHistory)
 		})
 	})
 
@@ -88,16 +88,18 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 		// Administrative endpoints
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.BasicAuth("bikesRental API Administration", adminCredentials))
+
 			r.Route("/bikes", func(r chi.Router) {
 				r.Post("/", bikeHandler.AddBike)
 				r.Patch("/{bike_id}", bikeHandler.UpdateBike)
-				r.Get("/", bikeHandler.ListAllBikes)
+				r.Get("/{bike_id}", bikeHandler.GetBikeByID)
+				r.With(middlewares.Pagination).Get("/", bikeHandler.ListAllBikes)
 			})
 
 			r.Route("/users", func(r chi.Router) {
-				r.Get("/", users.ListUsers)
-				r.Get("/{user_id}", users.GetUserDetails)
-				r.Patch("/{user_id}", users.UpdateUserDetails)
+				r.With(middlewares.Pagination).Get("/", userHandler.ListAllUsers)
+				r.Get("/{user_id}", userHandler.GetUserDetails)
+				r.Patch("/{user_id}", userHandler.UpdateUserDetails)
 			})
 
 			r.Route("/rentals", func(r chi.Router) {
@@ -110,6 +112,7 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 	return r
 }
 
+// adminCredentialsDecode decodes the admin credentials from the environment variable
 func adminCredentialsDecode() map[string]string {
 	decodedAdminCred, err := helpers.Base64Decode(adminCredentialsEnc)
 	if err {

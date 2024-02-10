@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bikesRentalAPI/internal/helpers"
+	"bikesRentalAPI/internal/middlewares"
 	"bikesRentalAPI/internal/users/models"
 	"bikesRentalAPI/internal/users/repository"
 	"encoding/json"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-playground/validator/v10"
 )
@@ -21,6 +23,9 @@ type Handler interface {
 	LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request)
 	GetUserProfile(w http.ResponseWriter, req *http.Request)
 	UpdateUserProfile(w http.ResponseWriter, req *http.Request)
+	ListAllUsers(w http.ResponseWriter, r *http.Request)
+	UpdateUserDetails(w http.ResponseWriter, r *http.Request)
+	GetUserDetails(w http.ResponseWriter, req *http.Request)
 }
 
 type handler struct {
@@ -38,7 +43,7 @@ func New(userRepo repository.UserRepository) Handler {
 	return handler
 }
 
-// RegisterUser ...
+// RegisterUser receives a request and returns a response for registering a new user
 func (h *handler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 	// Parse body from request
 	body, err := helpers.ParseBody(req.Body)
@@ -64,7 +69,11 @@ func (h *handler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Sprintf("Error creating user: %v", err), http.StatusInternalServerError)
 		return
 	}
-	helpers.WriteJSON(w, http.StatusCreated, id)
+	createdUserResp := models.CreateUpdateUserResponse{
+		ID:      id,
+		Message: "User Created successfully",
+	}
+	helpers.WriteJSON(w, http.StatusCreated, createdUserResp)
 
 }
 
@@ -170,11 +179,7 @@ func (h *handler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Get user from database
-	userId, err := strconv.Atoi(claims["sub"].(string))
-	if err != nil {
-		log.Printf("Error getting user id from claims: %v", err)
-		http.Error(w, "Not valid sub in claims", http.StatusUnauthorized)
-	}
+	userId := claims["sub"].(int64)
 
 	user, err := h.UserRepo.GetUserByID(int64(userId))
 	if err != nil {
@@ -184,7 +189,7 @@ func (h *handler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Compare attributes to identify modifications
-	fieldsToUpdate, err := getFieldsToUpdate(&updateUserReq, &user)
+	fieldsToUpdate, err := getFieldsToUpdate(&updateUserReq, user)
 	if err != nil {
 		http.Error(w, "No fields to update", http.StatusBadRequest)
 		return
@@ -196,15 +201,115 @@ func (h *handler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Error updating user", http.StatusInternalServerError)
 		return
 	}
-	updateUserResp := models.UpdateUserResponse{
-		UserID:  result,
+	updateUserResp := models.CreateUpdateUserResponse{
+		ID:      result,
 		Message: "User updated successfully",
 	}
 	helpers.WriteJSON(w, http.StatusOK, updateUserResp)
 }
 
+// ----------------------------------------
+// ------ Admin access only ---------------
+// ----------------------------------------
+
+// ListAllUsers returns a list of all users
+func (h *handler) ListAllUsers(w http.ResponseWriter, r *http.Request) {
+	pageID := r.Context().Value(middlewares.PageIDKey)
+	users, err := h.UserRepo.ListAllUsers(pageID.(int64))
+	if err != nil {
+		log.Printf("Error getting available users: %v", err)
+		http.Error(w, "Error getting available users", http.StatusInternalServerError)
+		return
+	}
+
+	userListResp := models.UserList{
+		Items:      users.Items,
+		NextPageID: users.NextPageID,
+	}
+	helpers.WriteJSON(w, http.StatusOK, userListResp)
+}
+
+// GetUserDetails retrieves a user from the database based on the user id
+func (h *handler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
+	userIDStr := chi.URLParam(r, "user_id")
+	userId, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't read user %s: %v", userIDStr, err), http.StatusBadRequest)
+		return
+	}
+	user, err := h.UserRepo.GetUserByID(userId)
+	if err != nil {
+		log.Printf("Error getting user: %v", err)
+		http.Error(w, "Error getting user", http.StatusInternalServerError)
+		return
+	}
+	helpers.WriteJSON(w, http.StatusOK, user)
+}
+
+// UpdateUserDetails ...
+func (h *handler) UpdateUserDetails(w http.ResponseWriter, req *http.Request) {
+	userIDStr := chi.URLParam(req, "user_id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't read %s: %v", userIDStr, err), http.StatusBadRequest)
+		return
+	}
+
+	// Parse body from request
+	body, err := helpers.ParseBody(req.Body)
+	if err != nil {
+		http.Error(w, "Error parsing body request", http.StatusBadRequest)
+		return
+	}
+
+	var updateUserReq *models.UpdateUserRequest
+	err = json.Unmarshal(body, &updateUserReq)
+	if err != nil {
+		http.Error(w, "Error unmarshalling body request", http.StatusBadRequest)
+		return
+	}
+	// Validate user input
+	err = h.validator.Struct(updateUserReq)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation errors: %s", errors), http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.UserRepo.GetUserByID(userID)
+	if err != nil {
+		log.Printf("Error getting user: %v", err)
+		http.Error(w, "Error getting user", http.StatusInternalServerError)
+		return
+	}
+
+	// Compare attributes to identify modifications
+	fieldsToUpdate, err := getFieldsToUpdate(updateUserReq, user)
+	if err != nil {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	// Update user
+	result, err := h.UserRepo.UpdateUser(userID, fieldsToUpdate)
+	if err != nil {
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		return
+	}
+	updateUserResp := models.CreateUpdateUserResponse{
+		ID:      result,
+		Message: "User updated successfully",
+	}
+	helpers.WriteJSON(w, http.StatusOK, updateUserResp)
+}
+
+// ----------------------------------------
+// ------ Utils ---------------------------
+// ----------------------------------------
+
 // getFieldsToUpdate ...
 func getFieldsToUpdate(updateUserReq *models.UpdateUserRequest, user *models.User) (map[string]interface{}, error) {
+	// TODO move this to utils and add support for interface{} to be used across domains
 	if updateUserReq == nil || user == nil {
 		return nil, fmt.Errorf("no fields to update")
 	}
@@ -223,21 +328,4 @@ func getFieldsToUpdate(updateUserReq *models.UpdateUserRequest, user *models.Use
 		return nil, fmt.Errorf("no fields to update")
 	}
 	return fieldsToUpdate, nil
-}
-
-// Admin access only
-
-// ListUsers ...
-func ListUsers(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to list all users
-}
-
-// GetUserDetails ...
-func GetUserDetails(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to get user details
-}
-
-// UpdateUserDetails ...
-func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
-	// TODO Implement logic to update user details
 }

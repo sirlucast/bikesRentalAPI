@@ -15,9 +15,10 @@ const (
 
 type BikeRepository interface {
 	ListAvailableBikes(PageID int64) (*models.BikeList, error)
-	ListAllBikes() ([]models.Bike, error)
-	UpdateBike(bikeID int, fieldsToUpdate map[string]interface{}) (int64, error)
-	CreateBike(bike models.Bike) (int64, error)
+	ListAllBikes(PageID int64) (*models.BikeList, error)
+	UpdateBike(bikeID int64, fieldsToUpdate map[string]interface{}) (int64, error)
+	CreateBike(bike models.CreateUpdateBikeRequest) (int64, error)
+	GetBikeByID(bikeID int64) (*models.Bike, error)
 }
 
 type bikeRepository struct {
@@ -27,6 +28,17 @@ type bikeRepository struct {
 // New initializes a new empty bike repository
 func New(db database.Database) BikeRepository {
 	return &bikeRepository{db}
+}
+
+// GetBikeByID retrieves a bike from the database by its id
+func (r *bikeRepository) GetBikeByID(bikeID int64) (*models.Bike, error) {
+	query := "SELECT id, is_available, price_per_minute, latitude, longitude, created_at, updated_at FROM bikes WHERE id = ?"
+	row := r.db.QueryRow(query, bikeID)
+	var bike models.Bike
+	if err := row.Scan(&bike.ID, &bike.IsAvailable, &bike.PricePerMinute, &bike.Latitude, &bike.Longitude, &bike.CreatedAt, &bike.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &bike, nil
 }
 
 // ListAvailableBikes retrieves all available bikes from the database
@@ -57,27 +69,32 @@ func (r *bikeRepository) ListAvailableBikes(PageID int64) (*models.BikeList, err
 }
 
 // ListAllBikes retrieves all bikes from the database
-func (r *bikeRepository) ListAllBikes() ([]models.Bike, error) {
-	query := "SELECT * FROM bikes"
-	rows, err := r.db.Query(query, true)
+func (r *bikeRepository) ListAllBikes(PageID int64) (*models.BikeList, error) {
+	query := "SELECT id, is_available, price_per_minute, latitude, longitude, created_at, updated_at FROM bikes WHERE id > ? ORDER BY id LIMIT ?"
+	rows, err := r.db.Query(query, PageID, pageSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var bikes []models.Bike
+	bikes := &models.BikeList{}
+	bikeList := make([]*models.Bike, 0)
 	for rows.Next() {
 		var bike models.Bike
-		if err := rows.Scan(&bike.ID, &bike.IsAvailable, &bike.PricePerMinute, &bike.Latitude, &bike.Longitude, &bike.UpdatedAt); err != nil {
+		if err := rows.Scan(&bike.ID, &bike.IsAvailable, &bike.PricePerMinute, &bike.Latitude, &bike.Longitude, &bike.CreatedAt, &bike.UpdatedAt); err != nil {
 			return nil, err
 		}
-		bikes = append(bikes, bike)
+		bikeList = append(bikeList, &bike)
 	}
+	if len(bikeList) == pageSize {
+		bikes.NextPageID = bikeList[len(bikeList)-1].ID
+	}
+	bikes.Items = bikeList
 	return bikes, nil
 }
 
 // UpdateBike updates a bike in the database
-func (r *bikeRepository) UpdateBike(bikeID int, fieldsToUpdate map[string]interface{}) (int64, error) {
+func (r *bikeRepository) UpdateBike(bikeID int64, fieldsToUpdate map[string]interface{}) (int64, error) {
 	var setFields []string
 	var args []interface{}
 
@@ -106,7 +123,7 @@ func (r *bikeRepository) UpdateBike(bikeID int, fieldsToUpdate map[string]interf
 }
 
 // CreateBike creates a bike in the database
-func (r *bikeRepository) CreateBike(bike models.Bike) (int64, error) {
+func (r *bikeRepository) CreateBike(bike models.CreateUpdateBikeRequest) (int64, error) {
 	query := "INSERT INTO bikes (is_available, price_per_minute, latitude, longitude) VALUES (?, ?, ?, ?)"
 	result, err := r.db.Exec(query, bike.IsAvailable, bike.PricePerMinute, bike.Latitude, bike.Longitude)
 	if err != nil {

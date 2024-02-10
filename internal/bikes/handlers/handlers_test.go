@@ -9,20 +9,26 @@ func TestListAvailableBikes(t *testing.T) {
 	// THEN: the available bikes should be listed
 }
 
-func TestStartBikeRental(t *testing.T) {
-	// GIVEN: a request to start a bike rental
+func TestAddBike(t *testing.T) {
+	// GIVEN: a request to add a bike
 	// WHEN: the request is made
-	// THEN: the bike rental should be started
+	// THEN: the bike should be added
 }
 
-func TestEndBikeRental(t *testing.T) {
-	// GIVEN: a request to end a bike rental
+func TestUpdateBike(t *testing.T) {
+	// GIVEN: a request to update a bike
 	// WHEN: the request is made
-	// THEN: the bike rental should be ended
+	// THEN: the bike should be updated
 }
 
-func TestGetRentalHistory(t *testing.T) {
-	// GIVEN: a request to get rental history
+func TestGetBikeByID(t *testing.T) {
+	// GIVEN: a request to get bike details
 	// WHEN: the request is made
-	// THEN: the rental history should be returned
+	// THEN: the bike details should be returned
+}
+
+func TestListAllBikes(t *testing.T) {
+	// GIVEN: a request to list all bikes
+	// WHEN: the request is made
+	// THEN: all bikes should be listed
 }

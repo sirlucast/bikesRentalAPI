@@ -15,7 +15,7 @@ type User struct {
 	LastName       *string   `json:"last_name,omitempty"`
 	CreatedAt      time.Time `json:"created_at,omitempty"`
 	UpdatedAt      time.Time `json:"updated_at,omitempty"`
-}
+} // @name User
 
 // FullName returns the full name of the user
 func (u *User) FullName() string {
@@ -90,11 +90,11 @@ type UpdateUserRequest struct {
 	//OldPassword string  `json:"old_password" validate:"omitempty"`
 } // @name UpdateUserRequest
 
-// UpdateUserResponse represents the response to update a user
-type UpdateUserResponse struct {
-	UserID  int64
-	Message string
-} // @name UpdateUserResponse
+// CreateUpdateUserResponse represents the response to update a user
+type CreateUpdateUserResponse struct {
+	ID      int64  `json:"id,omitempty"`
+	Message string `json:"message"`
+} // @name CreateUpdateUserResponse
 
 // Claims represents the claims of a JWT token
 type Claims struct {
@@ -104,3 +104,11 @@ type Claims struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 } // @name Claims
+
+// UserList contains a list of users
+type UserList struct {
+	// The list of users
+	Items []*User `json:"items"`
+	// The id to query the next page
+	NextPageID int64 `json:"next_page_id"`
+} // @name UserList
