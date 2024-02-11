@@ -4,6 +4,8 @@ import (
 	bikehandler "bikesRentalAPI/internal/bikes/handlers"
 	bikerepository "bikesRentalAPI/internal/bikes/repository"
 	"bikesRentalAPI/internal/database"
+	rentalhanlder "bikesRentalAPI/internal/rentals/handlers"
+	rentalrepository "bikesRentalAPI/internal/rentals/repository"
 	"bikesRentalAPI/internal/router"
 	"bikesRentalAPI/internal/server"
 	userhandler "bikesRentalAPI/internal/users/handlers"
@@ -14,7 +16,7 @@ import (
 )
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 }
 
 func main() {
@@ -47,7 +49,7 @@ func main() {
 	// - will move this to a better place
 	// Seeds the database
 	//seeder := database.NewSeeder(dbService)
-	//err = seeder.Seed()
+	//err = seeder.SeedUser()
 	//if err != nil {
 	//	log.Fatalf("failed to seed database: %v", err)
 	//}
@@ -65,9 +67,12 @@ func main() {
 	bikeRepository := bikerepository.New(dbService)
 	bikeHandler := bikehandler.New(bikeRepository)
 
+	rentalRepository := rentalrepository.New(dbService, userRepository, bikeRepository)
+	rentalHanlder := rentalhanlder.New(rentalRepository)
+
 	// Create a new router service and register routes
 	routerService := router.New()
-	handler := routerService.RegisterRoutes(userHandler, bikeHandler)
+	handler := routerService.RegisterRoutes(userHandler, bikeHandler, rentalHanlder)
 
 	server, err := server.NewServerBuilder().
 		WithHanlder(handler).
