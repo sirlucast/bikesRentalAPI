@@ -19,6 +19,9 @@ type BikeRepository interface {
 	UpdateBike(bikeID int64, fieldsToUpdate map[string]interface{}) (int64, error)
 	CreateBike(bike models.CreateUpdateBikeRequest) (int64, error)
 	GetBikeByID(bikeID int64) (*models.Bike, error)
+	IsBikeAvailable(bikeID int64) (bool, error)
+	SetBikeAvailability(bikeID int64, isAvailable bool) error
+	GetBikeCostPerMinute(bikeID int64) (float64, error)
 }
 
 type bikeRepository struct {
@@ -134,4 +137,35 @@ func (r *bikeRepository) CreateBike(bike models.CreateUpdateBikeRequest) (int64,
 		return 0, fmt.Errorf("failed to get last insert id: %v", err)
 	}
 	return id, nil
+}
+
+func (r *bikeRepository) IsBikeAvailable(bikeID int64) (bool, error) {
+	query := "SELECT is_available FROM bikes WHERE id = ?"
+	row := r.db.QueryRow(query, bikeID)
+	var isAvailable bool
+	if err := row.Scan(&isAvailable); err != nil {
+		return false, err
+	}
+	return isAvailable, nil
+}
+
+// SetBikeAvailability sets the availability of a bike in the database
+func (r *bikeRepository) SetBikeAvailability(bikeID int64, isAvailable bool) error {
+	query := "UPDATE bikes SET is_available = ? WHERE id = ?"
+	_, err := r.db.Exec(query, isAvailable, bikeID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetBikeCostPerMinute retrieves the cost per minute of a bike from the database
+func (r *bikeRepository) GetBikeCostPerMinute(bikeID int64) (float64, error) {
+	query := "SELECT price_per_minute FROM bikes WHERE id = ?"
+	row := r.db.QueryRow(query, bikeID)
+	var pricePerMinute float64
+	if err := row.Scan(&pricePerMinute); err != nil {
+		return 0, err
+	}
+	return pricePerMinute, nil
 }
