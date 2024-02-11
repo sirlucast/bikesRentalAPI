@@ -10,7 +10,7 @@ import (
 type User struct {
 	ID             int64     `json:"id,omitempty"`
 	Email          string    `json:"email,omitempty"`
-	HashedPassword string    `json:"password,omitempty"`
+	HashedPassword string    `json:"hashed_password,omitempty"`
 	FirstName      *string   `json:"first_name,omitempty"`
 	LastName       *string   `json:"last_name,omitempty"`
 	CreatedAt      time.Time `json:"created_at,omitempty"`
@@ -23,8 +23,11 @@ func (u *User) FullName() string {
 }
 
 // SetPassword hashes the password and sets it to the user
-func (u *User) SetPassword(password string) error {
-	hash, err := helpers.GetHashPassword(password)
+func (u *User) SetPassword(newPassword string, oldPassword string) error {
+	if !u.CheckPassword(oldPassword) {
+		return fmt.Errorf("old password is incorrect")
+	}
+	hash, err := helpers.GetHashPassword(newPassword)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %v", err)
 	}

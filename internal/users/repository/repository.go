@@ -15,7 +15,7 @@ const (
 
 type UserRepository interface {
 	CreateUser(models.CreateUserRequest) (int64, error)
-	GetUserByEmail(string) (*models.User, error)
+	GetUserByEmailForAuth(string) (*models.User, error)
 	GetUserByID(int64) (*models.User, error)
 	UpdateUser(userID int64, fieldsToUpdate map[string]interface{}) (int64, error)
 	ListAllUsers(int64) (*models.UserList, error)
@@ -48,11 +48,11 @@ func (r *userRepository) CreateUser(user models.CreateUserRequest) (int64, error
 	return id, nil
 }
 
-// GetUserByEmail retrieves a user from the database by email
-func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
+// GetUserByEmailForAuth retrieves a user from the database by email
+func (r *userRepository) GetUserByEmailForAuth(email string) (*models.User, error) {
 	var user models.User
-	query := "SELECT id, email, first_name, last_name, created_at, updated_at FROM users WHERE email = ?"
-	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.CreatedAt, &user.UpdatedAt)
+	query := "SELECT id, email, hashed_password, first_name, last_name FROM users WHERE email = ?"
+	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.HashedPassword, &user.FirstName, &user.LastName)
 	if err != nil {
 		return &user, err
 	}

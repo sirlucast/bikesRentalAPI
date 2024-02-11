@@ -273,12 +273,12 @@ func TestGetUserProfile(t *testing.T) {
 			expectedHttpCode:  http.StatusBadRequest,
 		},
 		{
-			name:              "Failure - GetUserProfile receives a valid request but DB returns error. Handler returns error 500",
+			name:              "Failure - GetUserProfile receives a valid request but DB returns error. Handler returns error 400",
 			mockGetUser:       true,
 			isAuthenticated:   true,
 			mockedUser:        nil,
 			expectedRepoError: assert.AnError,
-			expectedHttpCode:  http.StatusInternalServerError,
+			expectedHttpCode:  http.StatusBadRequest,
 		},
 	}
 

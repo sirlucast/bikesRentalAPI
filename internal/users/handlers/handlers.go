@@ -23,8 +23,8 @@ type Handler interface {
 	LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, req *http.Request)
 	GetUserProfile(w http.ResponseWriter, req *http.Request)
 	UpdateUserProfile(w http.ResponseWriter, req *http.Request)
-	ListAllUsers(w http.ResponseWriter, r *http.Request)
-	UpdateUserDetails(w http.ResponseWriter, r *http.Request)
+	ListAllUsers(w http.ResponseWriter, req *http.Request)
+	UpdateUserDetails(w http.ResponseWriter, req *http.Request)
 	GetUserDetails(w http.ResponseWriter, req *http.Request)
 }
 
@@ -108,24 +108,23 @@ func (h *handler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, r
 		return
 	}
 
-	loggedUser, err := h.UserRepo.GetUserByEmail(strings.ToLower(credentials.Email))
+	auxUser, err := h.UserRepo.GetUserByEmailForAuth(strings.ToLower(credentials.Email))
 	if err != nil {
 		log.Printf("Error getting user by email: %v", err)
 		http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
 		return
 	}
-
-	if !loggedUser.CheckPassword(credentials.Password) {
+	if !auxUser.CheckPassword(credentials.Password) {
 		http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
 		return
 	}
 
 	claimsMap := map[string]interface{}{
-		"sub":       strconv.FormatInt(loggedUser.GetID(), 10),
+		"sub":       strconv.FormatInt(auxUser.GetID(), 10),
 		"exp":       time.Now().Add(time.Hour * 24 * 30).Unix(),
-		"email":     loggedUser.GetEmail(),
-		"firstName": loggedUser.GetFirstName(),
-		"lastName":  loggedUser.GetLastName(),
+		"email":     auxUser.GetEmail(),
+		"firstName": auxUser.GetFirstName(),
+		"lastName":  auxUser.GetLastName(),
 	}
 
 	_, tokenString, err := tokenAuth.Encode(claimsMap)
@@ -157,8 +156,8 @@ func (h *handler) GetUserProfile(w http.ResponseWriter, req *http.Request) {
 	}
 	user, err := h.UserRepo.GetUserByID(int64(userId))
 	if err != nil {
-		log.Printf("Error getting user: %v", err)
-		http.Error(w, "Error getting user", http.StatusInternalServerError)
+		log.Printf("Error getting user %v: %v", userId, err)
+		http.Error(w, "Error getting user", http.StatusBadRequest)
 		return
 	}
 	helpers.WriteJSON(w, http.StatusOK, user)
@@ -190,10 +189,14 @@ func (h *handler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Get user from database
-	userId := claims["sub"].(int64)
+	userId, err := strconv.ParseInt(claims["sub"].(string), 10, 64)
+	if err != nil {
+		log.Printf("Error getting user id from jwt.claims: %v", err)
+		http.Error(w, "Error getting user id", http.StatusBadRequest)
+		return
+	}
 
-	user, err := h.UserRepo.GetUserByID(int64(userId))
+	user, err := h.UserRepo.GetUserByID(userId)
 	if err != nil {
 		log.Printf("Error getting user: %v", err)
 		http.Error(w, "Error getting user", http.StatusInternalServerError)
@@ -225,8 +228,8 @@ func (h *handler) UpdateUserProfile(w http.ResponseWriter, req *http.Request) {
 // ----------------------------------------
 
 // ListAllUsers returns a list of all users
-func (h *handler) ListAllUsers(w http.ResponseWriter, r *http.Request) {
-	pageID := r.Context().Value(middlewares.PageIDKey)
+func (h *handler) ListAllUsers(w http.ResponseWriter, req *http.Request) {
+	pageID := req.Context().Value(middlewares.PageIDKey)
 	users, err := h.UserRepo.ListAllUsers(pageID.(int64))
 	if err != nil {
 		log.Printf("Error getting available users: %v", err)
@@ -242,8 +245,8 @@ func (h *handler) ListAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUserDetails retrieves a user from the database based on the user id
-func (h *handler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "user_id")
+func (h *handler) GetUserDetails(w http.ResponseWriter, req *http.Request) {
+	userIDStr := chi.URLParam(req, "user_id")
 	userId, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("couldn't read user %s: %v", userIDStr, err), http.StatusBadRequest)
