@@ -65,6 +65,7 @@ func (h *handler) GetRentalDetails(w http.ResponseWriter, req *http.Request) {
 
 	rental, err := h.RentalRepo.GetRentalDetails(rentalID)
 	if err != nil {
+		log.Printf("Error getting rental details: %v", err)
 		http.Error(w, "Error getting rental details", http.StatusBadRequest)
 		return
 	}
@@ -104,6 +105,7 @@ func (h *handler) UpdateRentalDetails(w http.ResponseWriter, req *http.Request) 
 
 	rental, err := h.RentalRepo.GetRentalDetails(rentalID)
 	if err != nil {
+		log.Printf("UpdateRentalDetails: Error getting rental details: %v", err)
 		http.Error(w, "Error getting rental details", http.StatusBadRequest)
 		return
 	}
@@ -114,9 +116,26 @@ func (h *handler) UpdateRentalDetails(w http.ResponseWriter, req *http.Request) 
 		http.Error(w, "No fields to update", http.StatusBadRequest)
 		return
 	}
+
+	// A user can only rent one bike at a time
+	if _, ok := fieldsToUpdate["user_id"]; ok {
+		isUserRenting := h.RentalRepo.IsUserRentingBike(*updateRentalReq.UserID)
+		if isUserRenting {
+			http.Error(w, "User is already renting a bike", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if _, ok := fieldsToUpdate["bike_id"]; ok {
+		isBikeAvailable := h.RentalRepo.IsBikeAvailable(*updateRentalReq.BikeID)
+		if !isBikeAvailable {
+			http.Error(w, "Bike is already rented by other user", http.StatusBadRequest)
+			return
+		}
+	}
+
 	result, err := h.RentalRepo.UpdateRental(rentalID, fieldsToUpdate)
 	if err != nil {
-		log.Printf("Error updating rental: %v", err)
 		http.Error(w, "Error updating rental", http.StatusBadRequest)
 		return
 	}

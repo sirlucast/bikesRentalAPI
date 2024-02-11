@@ -73,12 +73,12 @@ type RentalList struct {
 
 // UpdateRentalRequest contains the request to update a rental
 type UpdateRentalRequest struct {
-	RentalID       *int64     `json:"rental_id" validate:"required,numeric"`
-	UserID         *int64     `json:"user_id" validate:"omitempty,required,numeric"`
-	BikeID         *int64     `json:"bike_id" validate:"omitempty,required,numeric"`
-	StartTime      *time.Time `json:"start_time" validate:"omitempty,required"`
-	StartLatitude  *float64   `json:"start_latitude" validate:"omitempty,required,latitude"`
-	StartLongitude *float64   `json:"start_longitude" validate:"omitempty,required,longitude"`
+	RentalID       *int64     `json:"rental_id" validate:"required_without=StartLongitude,required_without=StartLatitude,numeric"`
+	UserID         *int64     `json:"user_id" validate:"omitempty,required_without=StartLongitude,required_without=StartLatitude,numeric"`
+	BikeID         *int64     `json:"bike_id" validate:"omitempty,required_without=StartLongitude,required_without=StartLatitude,numeric"`
+	StartTime      *time.Time `json:"start_time" validate:"omitempty,required_without=StartLongitude,required_without=StartLatitude"`
+	StartLatitude  *float64   `json:"start_latitude" validate:"required_with=StartLongitude,latitude"`
+	StartLongitude *float64   `json:"start_longitude" validate:"required_with=StartLatitude,longitude"`
 } // @name UpdateRentalRequest
 
 // UpdateRentalResponse represents the response of updating a rental
