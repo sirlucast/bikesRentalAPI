@@ -54,19 +54,19 @@ func (mr *MockUserRepositoryMockRecorder) CreateUser(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserRepository)(nil).CreateUser), arg0)
 }
 
-// GetUserByEmail mocks base method.
-func (m *MockUserRepository) GetUserByEmail(arg0 string) (*models.User, error) {
+// GetUserByEmailForAuth mocks base method.
+func (m *MockUserRepository) GetUserByEmailForAuth(arg0 string) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByEmail", arg0)
+	ret := m.ctrl.Call(m, "GetUserByEmailForAuth", arg0)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserByEmail indicates an expected call of GetUserByEmail.
-func (mr *MockUserRepositoryMockRecorder) GetUserByEmail(arg0 any) *gomock.Call {
+// GetUserByEmailForAuth indicates an expected call of GetUserByEmailForAuth.
+func (mr *MockUserRepositoryMockRecorder) GetUserByEmailForAuth(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserRepository)(nil).GetUserByEmail), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmailForAuth", reflect.TypeOf((*MockUserRepository)(nil).GetUserByEmailForAuth), arg0)
 }
 
 // GetUserByID mocks base method.

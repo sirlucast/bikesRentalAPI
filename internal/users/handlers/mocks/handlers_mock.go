@@ -65,15 +65,15 @@ func (mr *MockHandlerMockRecorder) GetUserProfile(w, req any) *gomock.Call {
 }
 
 // ListAllUsers mocks base method.
-func (m *MockHandler) ListAllUsers(w http.ResponseWriter, r *http.Request) {
+func (m *MockHandler) ListAllUsers(w http.ResponseWriter, req *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListAllUsers", w, r)
+	m.ctrl.Call(m, "ListAllUsers", w, req)
 }
 
 // ListAllUsers indicates an expected call of ListAllUsers.
-func (mr *MockHandlerMockRecorder) ListAllUsers(w, r any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) ListAllUsers(w, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllUsers", reflect.TypeOf((*MockHandler)(nil).ListAllUsers), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllUsers", reflect.TypeOf((*MockHandler)(nil).ListAllUsers), w, req)
 }
 
 // LoginUser mocks base method.
@@ -101,15 +101,15 @@ func (mr *MockHandlerMockRecorder) RegisterUser(w, req any) *gomock.Call {
 }
 
 // UpdateUserDetails mocks base method.
-func (m *MockHandler) UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
+func (m *MockHandler) UpdateUserDetails(w http.ResponseWriter, req *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateUserDetails", w, r)
+	m.ctrl.Call(m, "UpdateUserDetails", w, req)
 }
 
 // UpdateUserDetails indicates an expected call of UpdateUserDetails.
-func (mr *MockHandlerMockRecorder) UpdateUserDetails(w, r any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) UpdateUserDetails(w, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserDetails", reflect.TypeOf((*MockHandler)(nil).UpdateUserDetails), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserDetails", reflect.TypeOf((*MockHandler)(nil).UpdateUserDetails), w, req)
 }
 
 // UpdateUserProfile mocks base method.

@@ -69,6 +69,36 @@ func (mr *MockBikeRepositoryMockRecorder) GetBikeByID(bikeID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBikeByID", reflect.TypeOf((*MockBikeRepository)(nil).GetBikeByID), bikeID)
 }
 
+// GetBikeCostPerMinute mocks base method.
+func (m *MockBikeRepository) GetBikeCostPerMinute(bikeID int64) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBikeCostPerMinute", bikeID)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBikeCostPerMinute indicates an expected call of GetBikeCostPerMinute.
+func (mr *MockBikeRepositoryMockRecorder) GetBikeCostPerMinute(bikeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBikeCostPerMinute", reflect.TypeOf((*MockBikeRepository)(nil).GetBikeCostPerMinute), bikeID)
+}
+
+// IsBikeAvailable mocks base method.
+func (m *MockBikeRepository) IsBikeAvailable(bikeID int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsBikeAvailable", bikeID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsBikeAvailable indicates an expected call of IsBikeAvailable.
+func (mr *MockBikeRepositoryMockRecorder) IsBikeAvailable(bikeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBikeAvailable", reflect.TypeOf((*MockBikeRepository)(nil).IsBikeAvailable), bikeID)
+}
+
 // ListAllBikes mocks base method.
 func (m *MockBikeRepository) ListAllBikes(PageID int64) (*models.BikeList, error) {
 	m.ctrl.T.Helper()
@@ -97,6 +127,20 @@ func (m *MockBikeRepository) ListAvailableBikes(PageID int64) (*models.BikeList,
 func (mr *MockBikeRepositoryMockRecorder) ListAvailableBikes(PageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAvailableBikes", reflect.TypeOf((*MockBikeRepository)(nil).ListAvailableBikes), PageID)
+}
+
+// SetBikeAvailability mocks base method.
+func (m *MockBikeRepository) SetBikeAvailability(bikeID int64, isAvailable bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetBikeAvailability", bikeID, isAvailable)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetBikeAvailability indicates an expected call of SetBikeAvailability.
+func (mr *MockBikeRepositoryMockRecorder) SetBikeAvailability(bikeID, isAvailable any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBikeAvailability", reflect.TypeOf((*MockBikeRepository)(nil).SetBikeAvailability), bikeID, isAvailable)
 }
 
 // UpdateBike mocks base method.
