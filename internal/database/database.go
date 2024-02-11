@@ -24,6 +24,7 @@ type Database interface {
 	QueryRow(string, ...interface{}) *sql.Row
 	Exec(string, ...interface{}) (sql.Result, error)
 	Prepare(string) (*sql.Stmt, error)
+	Transaction(context.Context, func(*sql.Tx) error) error
 	Close() error
 	Health() error
 }
@@ -48,6 +49,7 @@ func (d *database) Start() error {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 	d.db = db
+
 	return nil
 }
 
@@ -85,6 +87,23 @@ func (d *database) QueryRow(query string, args ...interface{}) *sql.Row {
 
 func (d *database) Prepare(query string) (*sql.Stmt, error) {
 	return d.db.Prepare(query)
+}
+func (d *database) Transaction(ctx context.Context, txFunc func(*sql.Tx) error) error {
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+	}()
+	if err := txFunc(tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+	return tx.Commit()
 }
 
 // Health checks the database connection and returns an error if it's down
