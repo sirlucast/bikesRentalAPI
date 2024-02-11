@@ -132,16 +132,18 @@ func (h *handler) LoginUser(tokenAuth *jwtauth.JWTAuth, w http.ResponseWriter, r
 
 }
 
-// GetUserProfile ...
+// GetUserProfile retrieves logged in user information from the database
 func (h *handler) GetUserProfile(w http.ResponseWriter, req *http.Request) {
 	_, claims, err := jwtauth.FromContext(req.Context())
-	if err != nil {
-		http.Error(w, "Error getting user claims", http.StatusInternalServerError)
+	if err != nil || claims == nil {
+		http.Error(w, "Error getting user claims", http.StatusBadRequest)
 		return
 	}
-	userId, err := strconv.Atoi(claims["sub"].(string))
+	userId, err := strconv.ParseInt(claims["sub"].(string), 10, 64)
 	if err != nil {
-		fmt.Println("value is not a string")
+		log.Printf("Error getting user id from jwt.claims: %v", err)
+		http.Error(w, "Error getting user id", http.StatusBadRequest)
+		return
 	}
 	user, err := h.UserRepo.GetUserByID(int64(userId))
 	if err != nil {

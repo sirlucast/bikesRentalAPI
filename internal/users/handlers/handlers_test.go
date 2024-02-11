@@ -11,27 +11,38 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 const (
-	testEmail      = "test@test.com"
-	testPsw        = "test"
-	testInvalidPsw = "invalid"
-	testSecretKey  = "test_key"
+	testEmail      string = "test@test.com"
+	testPsw        string = "test"
+	testInvalidPsw string = "invalid"
+	testSecretKey  string = "test_key"
+	testFirstName  string = "test"
+	testLastName   string = "test"
 )
 
 var (
 	hashedPasw, _   = helpers.GetHashPassword(testPsw)
-	mockedValidUser = models.User{
+	mockedValidUser = &models.User{
 		ID:             1,
 		Email:          testEmail,
 		HashedPassword: hashedPasw,
 	}
 	testTokenAuth = &jwtauth.JWTAuth{}
+	testClaimsMap = map[string]interface{}{
+		"sub":        "1", // user id
+		"exp":        time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"email":      testEmail,
+		"first_name": testFirstName,
+		"last_name":  testLastName,
+	}
 )
 
 func TestLoginUser(t *testing.T) {
@@ -45,7 +56,7 @@ func TestLoginUser(t *testing.T) {
 		email               string
 		password            string
 		callMock            bool
-		mockedUser          models.User
+		mockedUser          *models.User
 		expectedRepoError   error
 		expectedHttpCode    int
 		expectedResponseMsg string
@@ -67,7 +78,7 @@ func TestLoginUser(t *testing.T) {
 			email:               "",
 			password:            "",
 			callMock:            false,
-			mockedUser:          models.User{},
+			mockedUser:          &models.User{},
 			expectedRepoError:   nil,
 			expectedHttpCode:    http.StatusBadRequest,
 			expectedResponseMsg: "Validation errors",
@@ -89,7 +100,7 @@ func TestLoginUser(t *testing.T) {
 			email:               "invalid_email@email.com",
 			password:            testPsw,
 			callMock:            true,
-			mockedUser:          models.User{},
+			mockedUser:          &models.User{},
 			expectedRepoError:   fmt.Errorf("error"),
 			expectedHttpCode:    http.StatusUnauthorized,
 			expectedResponseMsg: "Invalid username or password",
@@ -230,9 +241,82 @@ func TestRegisterUser(t *testing.T) {
 }
 
 func TestGetUserProfile(t *testing.T) {
-	// GIVEN: a request to get a user's profile
-	// WHEN: the request is made
-	// THEN: the user's profile should be returned
+	// GIVEN a mocked user repository
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockUsersRepo := mocks.NewMockUserRepository(mockCtrl)
+	// GIVEN a valid token Obj
+	testTokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
+
+	testCases := []struct {
+		name              string
+		mockGetUser       bool
+		mockedUser        *models.User
+		isAuthenticated   bool
+		expectedRepoError error
+		expectedHttpCode  int
+	}{
+		{
+			name:              "Success - GetUserProfile receives a valid request and returns a response",
+			mockGetUser:       true,
+			isAuthenticated:   true,
+			mockedUser:        mockedValidUser,
+			expectedRepoError: nil,
+			expectedHttpCode:  http.StatusOK,
+		},
+		{
+			name:              "Failure - GetUserProfile receives an invalid AuthToken. Handler returns error 400",
+			mockGetUser:       false,
+			isAuthenticated:   false,
+			mockedUser:        nil,
+			expectedRepoError: nil,
+			expectedHttpCode:  http.StatusBadRequest,
+		},
+		{
+			name:              "Failure - GetUserProfile receives a valid request but DB returns error. Handler returns error 500",
+			mockGetUser:       true,
+			isAuthenticated:   true,
+			mockedUser:        nil,
+			expectedRepoError: assert.AnError,
+			expectedHttpCode:  http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.mockGetUser {
+				mockUsersRepo.EXPECT().GetUserByID(gomock.Any()).Return(tc.mockedUser, tc.expectedRepoError).Times(1)
+			}
+			// GIVEN a request to get a user's profile
+			req, err := http.NewRequest("GET", "/users/profile", nil)
+			assert.Nil(t, err)
+			if tc.isAuthenticated {
+				var testToken jwt.Token
+				var tesTokenErr error
+				testToken, _, tesTokenErr = testTokenAuth.Encode(testClaimsMap)
+				// GIVEN a JWT context
+				ctx := jwtauth.NewContext(req.Context(), testToken, tesTokenErr)
+				req = req.WithContext(ctx)
+			} else {
+				// GIVEN a JWT context
+				ctx := jwtauth.NewContext(req.Context(), nil, assert.AnError)
+				req = req.WithContext(ctx)
+			}
+			// GIVEN a recorder to record the response
+			rr := httptest.NewRecorder()
+			// GIVEN a user handler
+			userHandler := New(mockUsersRepo)
+			handler := http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					userHandler.GetUserProfile(w, r)
+				},
+			)
+			// WHEN the request is made
+			handler.ServeHTTP(rr, req)
+			// THEN The expected status code should be returned
+			assert.Equal(t, tc.expectedHttpCode, rr.Code)
+		})
+	}
 }
 
 func TestUpdateUserProfile(t *testing.T) {
