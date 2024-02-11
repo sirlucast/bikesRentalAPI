@@ -64,6 +64,16 @@ func (h *handler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Sprintf("Validation errors: %s", errors), http.StatusBadRequest)
 		return
 	}
+	IsEmailUnique, err := h.UserRepo.IsEmailUnique(newUser.Email)
+	if err != nil {
+		log.Printf("Error checking email uniqueness: %v", err)
+		http.Error(w, "Error checking email uniqueness", http.StatusInternalServerError)
+		return
+	}
+	if !IsEmailUnique {
+		http.Error(w, "Email already exists", http.StatusBadRequest)
+		return
+	}
 	id, err := h.UserRepo.CreateUser(newUser)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating user: %v", err), http.StatusInternalServerError)

@@ -19,6 +19,7 @@ type UserRepository interface {
 	GetUserByID(int64) (*models.User, error)
 	UpdateUser(userID int64, fieldsToUpdate map[string]interface{}) (int64, error)
 	ListAllUsers(int64) (*models.UserList, error)
+	IsEmailUnique(string) (bool, error)
 }
 
 type userRepository struct {
@@ -51,11 +52,21 @@ func (r *userRepository) CreateUser(user models.CreateUserRequest) (int64, error
 func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	query := "SELECT id, email, first_name, last_name, created_at, updated_at FROM users WHERE email = ?"
-	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.HashedPassword, &user.FirstName, &user.LastName, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return &user, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) IsEmailUnique(email string) (bool, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM users WHERE email = ?"
+	err := r.db.QueryRow(query, email).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count == 0, nil
 }
 
 // GetUserByID retrieves a user from the database by id

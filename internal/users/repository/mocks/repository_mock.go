@@ -84,6 +84,21 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByID(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockUserRepository)(nil).GetUserByID), arg0)
 }
 
+// IsEmailUnique mocks base method.
+func (m *MockUserRepository) IsEmailUnique(arg0 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEmailUnique", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsEmailUnique indicates an expected call of IsEmailUnique.
+func (mr *MockUserRepositoryMockRecorder) IsEmailUnique(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmailUnique", reflect.TypeOf((*MockUserRepository)(nil).IsEmailUnique), arg0)
+}
+
 // ListAllUsers mocks base method.
 func (m *MockUserRepository) ListAllUsers(arg0 int64) (*models.UserList, error) {
 	m.ctrl.T.Helper()
