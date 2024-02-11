@@ -19,7 +19,17 @@ go install go.uber.org/mock/mockgen@latest
 ```
 Example of use
 ```bash
-mockgen -source=internal/users/repository/repository.go -destination=internal/users/repository/mocks/repository_mock.go -package=mocks
+    mockgen -source=internal/users/repository/repository.go -destination=internal/users/repository/mocks/repository_mock.go -package=mocks
+
+    mockgen -source=internal/bikes/repository/repository.go -destination=internal/bikes/repository/mocks/repository_mock.go -package=mocks
+
+    mockgen -source=internal/rental/repository/repository.go -destination=internal/rental/repository/mocks/repository_mock.go -package=mocks
+
+    mockgen -source=internal/bikes/handlers/handlers.go -destination=internal/bikes/handlers/mocks/handlers_mock.go -package=mocks
+
+    mockgen -source=internal/users/handlers/handlers.go -destination=internal/users/handlers/mocks/handlers_mock.go -package=mocks
+    
+    mockgen -source=internal/rentals/handlers/handlers.go -destination=internal/rentals/handlers/mocks/handlers_mock.go -package=mocks
 ```
 
 ## MakeFile
