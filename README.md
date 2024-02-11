@@ -32,6 +32,17 @@ Example of use
     mockgen -source=internal/rentals/handlers/handlers.go -destination=internal/rentals/handlers/mocks/handlers_mock.go -package=mocks
 ```
 
+To run the project with db migrations, this will start the project and will run the migratiosn at once.
+
+```bash
+make run-with-migrations
+```
+
+To Seed the DB with example values
+```bash
+make run-with-seeder
+```
+
 ## MakeFile
 
 There is a Make file to make easy to run this project.

@@ -10,6 +10,7 @@ import (
 	"bikesRentalAPI/internal/server"
 	userhandler "bikesRentalAPI/internal/users/handlers"
 	userrepository "bikesRentalAPI/internal/users/repository"
+	"flag"
 	"log"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -40,26 +41,40 @@ func main() {
 		log.Fatalf("failed to check database health: %v", err)
 	}
 
-	// Migrate the database
-	err = dbService.Migrate()
-	if err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
+	// Define a flag to indicate whether to run the seeder
+	runSeeder := flag.Bool("seed", false, "run seeder")
+
+	// Define a flag to indicate whether to run the mirgation
+	runMigrations := flag.Bool("migrate", false, "run migrations")
+	flag.Parse()
+
+	if *runMigrations {
+		// Migrate the database
+		err = dbService.Migrate()
+		if err != nil {
+			log.Fatalf("failed to migrate database: %v", err)
+		}
 	}
 
-	// - will move this to a better place
-	// Seeds the database
-	//seeder := database.NewSeeder(dbService)
-	//err = seeder.SeedUser()
-	//if err != nil {
-	//	log.Fatalf("failed to seed database: %v", err)
-	//}
+	if *runSeeder {
+		// TODO move this to a better place
 
-	//bikesSeeder := database.NewSeeder(dbService)
-	//err = bikesSeeder.SeedBikes()
-	//if err != nil {
-	//	log.Fatalf("failed to seed database: %v", err)
-	//}
-	// - end of seeds
+		// Seeds the database
+		seeder := database.NewSeeder(dbService)
+		err = seeder.SeedUser()
+		if err != nil {
+			log.Fatalf("failed to seed database: %v", err)
+		}
+
+		bikesSeeder := database.NewSeeder(dbService)
+		err = bikesSeeder.SeedBikes()
+		if err != nil {
+			log.Fatalf("failed to seed database: %v", err)
+		}
+		// - end of seeds
+
+		log.Println("Seeder executed successfully")
+	}
 
 	// Initialize the repositories and handlers
 	userRepository := userrepository.New(dbService)

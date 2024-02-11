@@ -1,5 +1,9 @@
 # Simple Makefile for a Go project
 
+# Define variables for flags
+SEED_FLAG := -seed
+MIGRATION_FLAG := -migrate
+
 # Build the application
 all: build
 
@@ -10,6 +14,13 @@ build:
 # Run the application
 run:
 	@go run cmd/api/main.go
+
+# Run the application with migrations
+run-with-migrations:
+	@go run cmd/api/main.go $(MIGRATION_FLAG)
+
+run-with-seed:
+	@go run cmd/api/main.go $(SEED_FLAG)
 
 # Test the application
 test:
