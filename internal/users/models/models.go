@@ -95,7 +95,9 @@ type UpdateUserRequest struct {
 
 // CreateUpdateUserResponse represents the response to update a user
 type CreateUpdateUserResponse struct {
-	ID      int64  `json:"id,omitempty"`
+	// The id of the user
+	ID int64 `json:"id,omitempty"`
+	// The message of the response
 	Message string `json:"message"`
 } // @name CreateUpdateUserResponse
 

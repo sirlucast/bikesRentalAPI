@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bikesRentalAPI/internal/helpers"
+	"bikesRentalAPI/internal/middlewares"
 	"bikesRentalAPI/internal/rentals/models"
 	"bikesRentalAPI/internal/rentals/repository"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-playground/validator/v10"
 )
@@ -41,17 +43,89 @@ func New(RentalRepository repository.RentalRepository) Handler {
 
 // GetRentalList ...
 func (h *handler) GetRentalList(w http.ResponseWriter, req *http.Request) {
-	// TODO Implement logic to list all rentals
+	pageID := req.Context().Value(middlewares.PageIDKey)
+
+	rentals, err := h.RentalRepo.ListAllRentals(pageID.(int64))
+	if err != nil {
+		log.Printf("Error getting rental history: %v", err)
+		http.Error(w, "Error getting rental history", http.StatusBadRequest)
+		return
+	}
+	helpers.WriteJSON(w, http.StatusOK, rentals)
 }
 
 // GetRentalDetails ...
 func (h *handler) GetRentalDetails(w http.ResponseWriter, req *http.Request) {
-	// TODO Implement logic to get rental details
+	rentalIDStr := chi.URLParam(req, "rental_id")
+	rentalID, err := strconv.ParseInt(rentalIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't read %s: %v", rentalIDStr, err), http.StatusBadRequest)
+		return
+	}
+
+	rental, err := h.RentalRepo.GetRentalDetails(rentalID)
+	if err != nil {
+		http.Error(w, "Error getting rental details", http.StatusBadRequest)
+		return
+	}
+	helpers.WriteJSON(w, http.StatusOK, rental)
 }
 
 // UpdateRentalDetails ...
 func (h *handler) UpdateRentalDetails(w http.ResponseWriter, req *http.Request) {
-	// TODO Implement logic to update rental details
+	rentalIDStr := chi.URLParam(req, "rental_id")
+	rentalID, err := strconv.ParseInt(rentalIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't read %s: %v", rentalIDStr, err), http.StatusBadRequest)
+		return
+	}
+
+	// Parse body from request
+	body, err := helpers.ParseBody(req.Body)
+	if err != nil {
+		http.Error(w, "Error parsing body request", http.StatusBadRequest)
+		return
+	}
+
+	var updateRentalReq *models.UpdateRentalRequest
+	err = json.Unmarshal(body, &updateRentalReq)
+	if err != nil {
+		http.Error(w, "Error unmarshalling body request", http.StatusBadRequest)
+		return
+	}
+
+	// Validate user input
+	err = h.validator.Struct(updateRentalReq)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation errors: %s", errors), http.StatusBadRequest)
+		return
+	}
+
+	rental, err := h.RentalRepo.GetRentalDetails(rentalID)
+	if err != nil {
+		http.Error(w, "Error getting rental details", http.StatusBadRequest)
+		return
+	}
+
+	// Compare attributes to identify modifications
+	fieldsToUpdate, err := getFieldsToUpdate(updateRentalReq, rental)
+	if err != nil {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+	result, err := h.RentalRepo.UpdateRental(rentalID, fieldsToUpdate)
+	if err != nil {
+		log.Printf("Error updating rental: %v", err)
+		http.Error(w, "Error updating rental", http.StatusBadRequest)
+		return
+	}
+	updateRentalResp := models.UpdateRentalResponse{
+		ID:      result,
+		Message: "Rental updated successfully",
+	}
+	helpers.WriteJSON(w, http.StatusOK, updateRentalResp)
+
 }
 
 // StartBikeRental ...
@@ -164,10 +238,51 @@ func (h *handler) EndBikeRental(w http.ResponseWriter, req *http.Request) {
 
 }
 
-// GetRentalHistoryByUserID ...
+// GetRentalHistoryByUserID retrieves the rental history of a user
 func (h *handler) GetRentalHistoryByUserID(w http.ResponseWriter, req *http.Request) {
-	// TODO Implement logic to get rental history
-	// 1. Get pagination details from the request context
-	//pageID := r.Context().Value(middlewares.PageIDKey)
-	// 2. Get rental history from the database
+	_, claims, err := jwtauth.FromContext(req.Context())
+	if err != nil || claims == nil {
+		http.Error(w, "Error getting user claims", http.StatusBadRequest)
+		return
+	}
+	userId, err := strconv.ParseInt(claims["sub"].(string), 10, 64)
+	if err != nil {
+		log.Printf("Error getting user id from jwt.claims: %v", err)
+		http.Error(w, "Error getting user id", http.StatusBadRequest)
+		return
+	}
+	pageID := req.Context().Value(middlewares.PageIDKey)
+
+	rentals, err := h.RentalRepo.GetRentalHistoryByUserID(userId, pageID.(int64))
+	if err != nil {
+		log.Printf("Error getting rental history: %v", err)
+		http.Error(w, "Error getting rental history", http.StatusBadRequest)
+		return
+	}
+	helpers.WriteJSON(w, http.StatusOK, rentals)
+}
+
+// getFieldsToUpdate compares the fields of the update request with the rental and returns the fields to update as map
+func getFieldsToUpdate(updateRentalReq *models.UpdateRentalRequest, rental *models.Rental) (map[string]interface{}, error) {
+	if updateRentalReq == nil || rental == nil {
+		return nil, fmt.Errorf("no fields to update")
+	}
+	fieldsToUpdate := make(map[string]interface{})
+	if updateRentalReq.BikeID != nil && *updateRentalReq.BikeID != rental.BikeID {
+		fieldsToUpdate["bike_id"] = updateRentalReq.BikeID
+	}
+	if updateRentalReq.UserID != nil && *updateRentalReq.UserID != rental.UserID {
+		fieldsToUpdate["user_id"] = updateRentalReq.UserID
+	}
+	if updateRentalReq.StartLatitude != nil && *updateRentalReq.StartLatitude != rental.StartLatitude {
+		fieldsToUpdate["start_latitude"] = updateRentalReq.StartLatitude
+	}
+	if updateRentalReq.StartLongitude != nil && *updateRentalReq.StartLongitude != rental.StartLongitude {
+		fieldsToUpdate["start_longitude"] = updateRentalReq.StartLongitude
+	}
+
+	if len(fieldsToUpdate) == 0 {
+		return nil, fmt.Errorf("no fields to update")
+	}
+	return fieldsToUpdate, nil
 }

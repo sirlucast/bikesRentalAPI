@@ -109,7 +109,7 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 			})
 
 			r.Route("/rentals", func(r chi.Router) {
-				r.Get("/", rentalHandler.GetRentalList)
+				r.With(middlewares.Pagination).Get("/", rentalHandler.GetRentalList)
 				r.Get("/{rental_id}", rentalHandler.GetRentalDetails)
 				r.Patch("/{rental_id}", rentalHandler.UpdateRentalDetails)
 			})
