@@ -122,7 +122,7 @@ func TestLoginUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.callMock {
 				// GIVEN: a mocked user from repository
-				mockUsersRepo.EXPECT().GetUserByEmail(gomock.Any()).Return(tc.mockedUser, tc.expectedRepoError).Times(1)
+				mockUsersRepo.EXPECT().GetUserByEmailForAuth(gomock.Any()).Return(tc.mockedUser, tc.expectedRepoError).Times(1)
 			}
 			// GIVEN: a tokenAuth
 			testTokenAuth = jwtauth.New(tc.testJWTAlg, []byte(testSecretKey), nil)
@@ -211,8 +211,10 @@ func TestRegisterUser(t *testing.T) {
 			// Mock the CreateUser method
 			if tc.mockCreateUser {
 				if tc.mockedErrror != nil {
+					mockUsersRepo.EXPECT().IsEmailUnique(gomock.Any()).Return(true, nil).Times(1)
 					mockUsersRepo.EXPECT().CreateUser(gomock.Any()).Return(int64(1), tc.mockedErrror).Times(1)
 				} else {
+					mockUsersRepo.EXPECT().IsEmailUnique(gomock.Any()).Return(true, nil).Times(1)
 					mockUsersRepo.EXPECT().CreateUser(gomock.Any()).Return(int64(1), nil).Times(1)
 				}
 			}

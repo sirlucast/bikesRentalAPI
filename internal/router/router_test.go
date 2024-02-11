@@ -2,6 +2,7 @@ package router
 
 import (
 	bikemocks "bikesRentalAPI/internal/bikes/handlers/mocks"
+	rentalmocks "bikesRentalAPI/internal/rentals/handlers/mocks"
 	usermocks "bikesRentalAPI/internal/users/handlers/mocks"
 
 	"io"
@@ -24,6 +25,7 @@ func TestRouter(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockUserHandler := usermocks.NewMockHandler(mockCtrl)
 	mockBikeHandler := bikemocks.NewMockHandler(mockCtrl)
+	mockRentalHandler := rentalmocks.NewMockHandler(mockCtrl)
 
 	t.Run("Success - New returns a new router interface using the chi router", func(t *testing.T) {
 		// WHEN: the New function is called
@@ -35,7 +37,7 @@ func TestRouter(t *testing.T) {
 		// GIVEN: a router
 		router := New()
 		// WHEN: the routes are registered
-		handler := router.RegisterRoutes(mockUserHandler, mockBikeHandler)
+		handler := router.RegisterRoutes(mockUserHandler, mockBikeHandler, mockRentalHandler)
 		// THEN: the handler should be created successfully
 		assert.NotNil(t, handler)
 	})
@@ -43,7 +45,7 @@ func TestRouter(t *testing.T) {
 		// GIVEN: a router, a test server and expected message
 		router := New()
 		// WHEN: the routes are registered
-		handler := router.RegisterRoutes(mockUserHandler, mockBikeHandler)
+		handler := router.RegisterRoutes(mockUserHandler, mockBikeHandler, mockRentalHandler)
 		// GIVEN: a test server
 		server := httptest.NewServer(handler)
 		defer server.Close()
