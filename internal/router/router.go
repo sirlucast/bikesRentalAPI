@@ -18,7 +18,7 @@ import (
 )
 
 type Router interface {
-	RegisterRoutes(userHandler users.Handler, bikeHandler bikes.Handler) http.Handler
+	RegisterRoutes(userHandler users.Handler, bikeHandler bikes.Handler, rentalHandler rentals.Handler) http.Handler
 }
 
 type chiRouter struct {
@@ -54,7 +54,7 @@ func New() Router {
 }
 
 // RegisterRoutes registers all routes for the application
-func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.Handler) http.Handler {
+func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.Handler, rentalHandler rentals.Handler) http.Handler {
 	// Add routes here
 	r.Route("/users", func(r chi.Router) {
 		// User authentication
@@ -78,9 +78,9 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 			// Bike general operations
 			r.With(middlewares.Pagination).Get("/available", bikeHandler.ListAvailableBikes)
 			// Bike rental operations
-			r.Post("/start", rentals.StartBikeRental)
-			r.Post("/end", rentals.EndBikeRental)
-			r.With(middlewares.Pagination).Get("/history", rentals.GetRentalHistory)
+			r.Post("/start", rentalHandler.StartBikeRental)
+			r.Post("/end", rentalHandler.EndBikeRental)
+			r.With(middlewares.Pagination).Get("/history", rentalHandler.GetRentalHistoryByUserID)
 		})
 	})
 
@@ -103,9 +103,9 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 			})
 
 			r.Route("/rentals", func(r chi.Router) {
-				r.Get("/", rentals.ListRentals)
-				r.Get("/{rental_id}", rentals.GetRentalDetails)
-				r.Patch("/{rental_id}", rentals.UpdateRentalDetails)
+				r.Get("/", rentalHandler.GetRentalList)
+				r.Get("/{rental_id}", rentalHandler.GetRentalDetails)
+				r.Patch("/{rental_id}", rentalHandler.UpdateRentalDetails)
 			})
 		})
 	})
