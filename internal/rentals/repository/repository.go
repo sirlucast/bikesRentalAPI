@@ -232,6 +232,7 @@ func (r *rentalRepository) GetRentalDetails(rentalID int64) (*models.Rental, err
 func (r *rentalRepository) UpdateRental(rentalID int64, fieldsToUpdate map[string]interface{}) (int64, error) {
 	var setFields []string
 	var args []interface{}
+	var id int64
 
 	for field, value := range fieldsToUpdate {
 		setFields = append(setFields, fmt.Sprintf("%s = ?", field))
@@ -239,22 +240,26 @@ func (r *rentalRepository) UpdateRental(rentalID int64, fieldsToUpdate map[strin
 	}
 	args = append(args, rentalID)
 
-	query := fmt.Sprintf("UPDATE rentals SET %s WHERE id = ?", strings.Join(setFields, ", "))
-	stmt, err := r.db.Prepare(query)
-	if err != nil {
-		return 0, fmt.Errorf("failed to prepare update statement: %v", err)
-	}
-	defer stmt.Close()
+	r.db.Transaction(context.Background(), func(tx *sql.Tx) error {
 
-	result, err := stmt.Exec(args...)
-	if err != nil {
-		return 0, fmt.Errorf("failed to execute update statement: %v", err)
-	}
+		query := fmt.Sprintf("UPDATE rentals SET %s WHERE id = ?", strings.Join(setFields, ", "))
+		stmt, err := r.db.Prepare(query)
+		if err != nil {
+			return fmt.Errorf("failed to prepare update statement: %v", err)
+		}
+		defer stmt.Close()
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get last insert id: %v", err)
-	}
+		result, err := stmt.Exec(args...)
+		if err != nil {
+			return fmt.Errorf("failed to execute update statement: %v", err)
+		}
+
+		id, err = result.LastInsertId()
+		if err != nil {
+			return fmt.Errorf("failed to get last insert id: %v", err)
+		}
+		return nil
+	})
 	return id, nil
 }
 
