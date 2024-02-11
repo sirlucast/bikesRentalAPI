@@ -77,6 +77,10 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 			r.Use(jwtauth.Authenticator(tokenAuth))
 			// Bike general operations
 			r.With(middlewares.Pagination).Get("/available", bikeHandler.ListAvailableBikes)
+			// Bike rental operations
+			r.Post("/start", rentals.StartBikeRental)
+			r.Post("/end", rentals.EndBikeRental)
+			r.With(middlewares.Pagination).Get("/history", rentals.GetRentalHistory)
 		})
 	})
 
@@ -90,9 +94,6 @@ func (r *chiRouter) RegisterRoutes(userHandler users.Handler, bikeHandler bikes.
 				r.Patch("/{bike_id}", bikeHandler.UpdateBike)
 				r.Get("/{bike_id}", bikeHandler.GetBikeByID)
 				r.With(middlewares.Pagination).Get("/", bikeHandler.ListAllBikes)
-				r.Post("/start", rentals.StartBikeRental)
-				r.Post("/end", rentals.EndBikeRental)
-				r.With(middlewares.Pagination).Get("/history", rentals.GetRentalHistory)
 			})
 
 			r.Route("/users", func(r chi.Router) {
