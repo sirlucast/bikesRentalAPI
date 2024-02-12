@@ -1,6 +1,7 @@
 # Project bikesRentalAPI
 
 Simple API used to complete the **Take-Home Test: Backend Engineer - Go Developer** application at [Forest](https://www.humanforest.co.uk).
+updated repo: https://github.com/sirlucast/bikesRentalAPI
 
 ## Getting Started
 
@@ -82,6 +83,12 @@ clean up binary from the last build
 ```bash
 make clean
 ```
+
+### TODOS
+
+- Add Swagger for Doc generation
+- Containerization
+- Improve Test coverage.
 
 ---
 
