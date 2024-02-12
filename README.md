@@ -11,10 +11,10 @@ Copy the env.example file to add your environment variables.
 cp env.example .env
 ```
 
-For manage migrations please use [golang-migrate CLI](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)
+To manage migrations please use [golang-migrate CLI](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)
 
-For mocking this project please use [GoMock](https://github.com/uber-go/mock)
-To install
+To generate mocks please use [GoMock](https://github.com/uber-go/mock)
+To install it
 ```bash
 go install go.uber.org/mock/mockgen@latest
 ```
