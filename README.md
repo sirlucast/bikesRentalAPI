@@ -32,7 +32,7 @@ Example of use
     mockgen -source=internal/rentals/handlers/handlers.go -destination=internal/rentals/handlers/mocks/handlers_mock.go -package=mocks
 ```
 
-To run the project with db migrations, this will start the project and will run the migratiosn at once.
+To run the project with db migrations (recommended for the first time), this will start the project and will run the migratiosn at once.
 
 ```bash
 make run-with-migrations

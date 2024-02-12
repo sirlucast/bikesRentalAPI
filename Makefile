@@ -19,7 +19,7 @@ run:
 run-with-migrations:
 	@go run cmd/api/main.go $(MIGRATION_FLAG)
 
-run-with-seed:
+run-with-seeder:
 	@go run cmd/api/main.go $(SEED_FLAG)
 
 # Test the application

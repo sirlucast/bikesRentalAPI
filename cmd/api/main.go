@@ -41,13 +41,13 @@ func main() {
 		log.Fatalf("failed to check database health: %v", err)
 	}
 
-	// Define a flag to indicate whether to run the seeder
-	runSeeder := flag.Bool("seed", false, "run seeder")
-
 	// Define a flag to indicate whether to run the mirgation
 	runMigrations := flag.Bool("migrate", false, "run migrations")
+	// Define a flag to indicate whether to run the seeder
+	runSeeder := flag.Bool("seed", false, "run seeder")
 	flag.Parse()
 
+	// TODO move runMigrations and runSeeder to a better place
 	if *runMigrations {
 		// Migrate the database
 		err = dbService.Migrate()
@@ -57,8 +57,6 @@ func main() {
 	}
 
 	if *runSeeder {
-		// TODO move this to a better place
-
 		// Seeds the database
 		seeder := database.NewSeeder(dbService)
 		err = seeder.SeedUser()
@@ -71,8 +69,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to seed database: %v", err)
 		}
-		// - end of seeds
-
 		log.Println("Seeder executed successfully")
 	}
 
