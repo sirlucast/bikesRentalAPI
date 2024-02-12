@@ -14,13 +14,13 @@ import (
 // ServerConfig holds configuration parameters for the server
 type ServerConfig struct {
 	Port int
-}
+} // @name ServerConfig
 
 // ServerBuilder is responsible for building the server
 type ServerBuilder struct {
 	Config  *ServerConfig
 	Handler http.Handler
-}
+} // @name ServerBuilder
 
 // NewServerBuilder creates a new ServerBuilder with default values
 func NewServerBuilder() *ServerBuilder {
